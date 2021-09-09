@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  reverse-proxy:
+    image: traefik:latest
+    command: 
+      - --log.level=DEBUG
+
+      # Dashboard config
+      - --api.dashboard=true
+      - --api.insecure=true
+
+      # Provider configuration
+      - --providers.docker.watch=true
+      - --providers.docker.swarmMode=true
+      - --providers.docker.exposedByDefault=false
+      - --providers.docker.swarmModeRefreshSeconds=15
+      - --providers.docker.network=public_network
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
+
+      # - --providers.file.watch=true
+      # - --providers.file.filename=/data/dynamic.yml
+
+      # Entry points configuration
+      - --entryPoints.web.address=:80
+      ### https redirection and configuration
+      # - --entrypoints.web.http.redirections.entryPoint.to=websecure
+      # - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      # - --entrypoints.web.http.redirections.entrypoint.permanent=true
+
+      # - --entrypoints.websecure.address=:443
+      # - --entrypoints.websecure.http.middlewares=secureHeaders@file
+
+      # Certificate configuration
+      # - --entrypoints.websecure.http.tls.certResolver=letsencrypt
+      # - --certificatesResolvers.letsencrypt.acme.email=${LE_ACME_EMAIL?Variable not set}
+      # - --certificatesResolvers.letsencrypt.acme.storage=/data/acme.json
+      # - --certificatesResolvers.letsencrypt.acme.keyType=EC384
+      # - --certificatesResolvers.letsencrypt.acme.httpChallenge.entryPoint=web
+    networks:
+      - public_network
+    volumes:
+      - traefik_data:/data
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
+    deploy:
+      placement:
+        constraints: 
+          - node.role == manager
+
+networks:
+  public_network:
+    external: true
+
+volumes:
+  traefik_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_TRAEFIK_PATH}
+      type: none
+      o: bind
+      # device: ":${HOST_TRAEFIK_PATH?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
