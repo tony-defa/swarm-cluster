@@ -1,0 +1,78 @@
+version: '3.8'
+
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://127.0.0.1:12201"
+
+services:
+  wordpress:
+    <<: *default-opts
+    image: wordpress
+    networks:
+      - public_network
+      - wp_network
+    volumes:
+      - wordpress_data:/var/www/html
+    environment:
+      - WORDPRESS_DB_HOST=wordpress-db
+      - WORDPRESS_DB_NAME=${DB_NAME}
+      - WORDPRESS_DB_USER=${DB_USER}
+      - WORDPRESS_DB_PASSWORD=${DB_PASSWORD}
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.wordpress.entrypoints: websecure
+        traefik.http.routers.wordpress.rule: Host(`${EXTERNAL_DOMAIN?Variable not set}`)
+        traefik.http.routers.wordpress.service: wordpress
+        traefik.http.services.wordpress.loadbalancer.server.port: 80
+
+  wordpress-db:
+    <<: *default-opts
+    image: mysql:5.7
+    networks:
+      - wp_network
+    volumes:
+      - wordpress_db:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    deploy:
+      mode: replicated
+      replicas: 1
+      
+networks:
+  public_network:
+    external: true
+    
+  wp_network:
+    driver: overlay
+
+volumes:
+  wordpress_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_WORDPRESS_DATA}
+      type: none
+      o: bind
+      # device: ":${HOST_WORDPRESS_DATA?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  wordpress_db:
+    driver: local
+    driver_opts:
+      device: ${HOST_WORDPRESS_DB}
+      type: none
+      o: bind
+      # device: ":${HOST_WORDPRESS_DB?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1

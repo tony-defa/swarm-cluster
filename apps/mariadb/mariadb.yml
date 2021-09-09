@@ -1,0 +1,46 @@
+version: '3.8'
+ 
+services:
+  db:
+    image: mariadb
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    secrets:
+      - mariadb_db_password
+      - mariadb_root_password
+    environment:
+      - MARIADB_DATABASE=${DB_NAME}
+      - MARIADB_USER=${DB_USER}
+      - MARIADB_PASSWORD_FILE=/run/secrets/mariadb_db_password
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/mariadb_root_password
+    command: ["mysqld", "--wait_timeout=28800", "--interactive_timeout=28800", "--max_allowed_packet=256M"]
+    networks:
+      - public_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+secrets:
+  mariadb_db_password:
+    external: true
+  mariadb_root_password:
+    external: true 
+      
+networks:
+  public_network:
+    external: true
+
+volumes:
+  mariadb_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_MARIADB_DATA}
+      type: none
+      o: bind
+      # device: ":${HOST_MARIADB_DATA?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1

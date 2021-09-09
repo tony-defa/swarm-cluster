@@ -1,0 +1,28 @@
+version: '3.8'
+
+x-default-opts: &default-opts
+  logging:
+    options:
+      max-size: "1m"
+
+services:
+  whoami:
+    <<: *default-opts
+    image: "traefik/whoami"
+    networks:
+      - public_network
+    deploy:
+      mode: replicated
+      replicas: 3
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.whoami.entrypoints: web
+        traefik.http.routers.whoami.rule: Host(`${EXTERNAL_DOMAIN?Variable not set}`)
+        traefik.http.routers.whoami.service: whoami
+        traefik.http.services.whoami.loadbalancer.server.port: 80
+        # traefik.http.services.whoami.loadBalancer.sticky.cookie: "true"
+        # traefik.http.services.whoami.loadBalancer.sticky.cookie.name: "sticky_whoami"
+
+networks:
+  public_network:
+    external: true

@@ -1,0 +1,106 @@
+version: "3.8"
+
+x-default-opts: &default-opts
+  env_file: .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://127.0.0.1:12201"
+
+services:
+  # MongoDB: https://hub.docker.com/_/mongo/
+  mongo:
+    <<: *default-opts
+    image: mongo:4.4
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - graylog
+  # Elasticsearch: https://www.elastic.co/guide/en/elasticsearch/reference/6.x/docker.html
+  elasticsearch:
+    <<: *default-opts
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.0
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    environment:
+      # Added empty variable to make sure that elasticsearch will take ownership of the files on startup.
+      # Omitting this will cause an error, when the persisted files were moved or the volume was recreated.
+      - TAKE_FILE_OWNERSHIP=;
+      - http.host=0.0.0.0
+      - transport.host=localhost
+      - network.host=0.0.0.0
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    networks:
+      - graylog
+  # Graylog: https://hub.docker.com/r/graylog/graylog/
+  graylog:
+    <<: *default-opts
+    image: graylog/graylog:4.0
+    volumes:
+      - graylog_data:/usr/share/graylog/data
+    environment:
+      - GRAYLOG_HTTP_EXTERNAL_IP=$$(ifconfig eth0 | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
+      - GRAYLOG_HTTP_EXTERNAL_URI=http://${GRAYLOG_HTTP_EXTERNAL_IP}:9000/
+      # Added to tell graylog that we are using elasticsearch version 7 or above.
+      # Omitting this will cause an error on startup, when running elasticsearch version > 7
+      - GRAYLOG_ELASTICSEARCH_VERSION=7
+    networks:
+      - graylog
+    depends_on:
+      - mongo
+      - elasticsearch
+    ports:
+      # Graylog web interface and REST API
+      - 9000:9000
+      # Syslog TCP
+      # - 1514:1514
+      # Syslog UDP
+      # - 1514:1514/udp
+      # GELF TCP
+      # - 12201:12201
+      # GELF UDP
+      - 12201:12201/udp
+
+networks:
+  graylog:
+    driver: overlay
+
+# Volumes for persisting data, see https://docs.docker.com/engine/admin/volumes/volumes/
+volumes:
+  mongo_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_MONGO_DATA}
+      type: none
+      o: bind
+      # device: ":${HOST_MONGO_DATA?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+  es_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_ELASTICSEARCH_DATA}
+      type: none
+      o: bind
+      # device: ":${HOST_ELASTICSEARCH_DATA?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+  graylog_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_GRAYLOG_DATA}
+      type: none
+      o: bind
+      # device: ":${HOST_GRAYLOG_DATA?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
