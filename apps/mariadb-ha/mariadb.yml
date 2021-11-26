@@ -1,0 +1,76 @@
+version: '3.8'
+ 
+services:
+  db:
+    image: bitnami/mariadb
+    volumes:
+      - mariadb_data:/bitnami/mariadb
+    secrets:
+      - mariadb_ha_db_password
+      - mariadb_ha_root_password
+      - mariadb_ha_replication_password
+    environment:
+      - MARIADB_DATABASE=${DB_NAME}
+      - MARIADB_USER=${DB_USER}
+      - MARIADB_PASSWORD_FILE=/run/secrets/mariadb_ha_db_password
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/mariadb_ha_root_password
+      - MARIADB_REPLICATION_MODE=master
+      - MARIADB_REPLICATION_USER=${DB_REPLICATION_USER}
+      - MARIADB_REPLICATION_PASSWORD_FILE=/run/secrets/mariadb_ha_replication_password
+      - MARIADB_SKIP_TEST_DB=yes
+      #- MARIADB_EXTRA_FLAGS='--wait_timeout=28800 --interactive_timeout=28800 --max_allowed_packet=256M'
+    networks:
+      - mariadb_ha_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  db-slave:
+    image: bitnami/mariadb
+    depends_on:
+      - db
+    secrets:
+      - mariadb_ha_db_password
+      - mariadb_ha_root_password
+      - mariadb_ha_replication_password
+    environment:
+      - MARIADB_REPLICATION_MODE=slave
+      - MARIADB_REPLICATION_USER=${DB_REPLICATION_USER}
+      - MARIADB_REPLICATION_PASSWORD_FILE=/run/secrets/mariadb_ha_replication_password
+      - MARIADB_MASTER_HOST=db
+      - MARIADB_MASTER_PORT_NUMBER=3306
+      - MARIADB_MASTER_ROOT_PASSWORD_FILE=/run/secrets/mariadb_ha_root_password
+      #- MARIADB_EXTRA_FLAGS='--wait_timeout=28800 --interactive_timeout=28800 --max_allowed_packet=256M'
+    networks:
+      - mariadb_ha_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+secrets:
+  mariadb_ha_db_password:
+    external: true
+  mariadb_ha_root_password:
+    external: true 
+  mariadb_ha_replication_password:
+    external: true 
+      
+networks:
+  mariadb_ha_network:
+    external: true
+
+volumes:
+  mariadb_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_MARIADB_DATA}
+      type: none
+      o: bind
