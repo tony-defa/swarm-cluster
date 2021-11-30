@@ -34,7 +34,6 @@ services:
     depends_on:
       - db
     secrets:
-      - mariadb_ha_db_password
       - mariadb_ha_root_password
       - mariadb_ha_replication_password
     environment:
