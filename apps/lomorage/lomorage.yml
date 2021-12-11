@@ -1,0 +1,40 @@
+version: "3.9"
+services:
+  lomo:
+    image: lomorage/raspberrypi-lomorage:${LOMORAGE_VERSION}
+    privileged: true
+    cap_add:
+      - ALL
+    volumes:
+      - lomo_media:/media
+      - lomo_data:/lomo
+    ports:
+      - ${LOMOD_PORT}:${LOMOD_PORT}
+    command: $LOMOD_PORT
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  watchtower:
+    image: containrrr/watchtower:${WATCHTOWER_VERSION}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: lomorage --cleanup
+    deploy:
+      mode: replicated
+      replicas: 1
+
+volumes:
+  lomo_media:
+    driver: local
+    driver_opts:
+      device: ${HOST_MEDIA_DIR}
+      type: none
+      o: bind
+
+  lomo_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_DATA_DIR}
+      type: none
+      o: bind
