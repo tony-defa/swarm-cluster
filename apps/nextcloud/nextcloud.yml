@@ -14,7 +14,7 @@ services:
       - MYSQL_USER=${DB_USER}
       - MYSQL_PASSWORD_FILE=/run/secrets/mariadb_db_password
     networks:
-      - nextcloud_data
+      - mariadb_network
     ports:
       - 9090:80
     deploy:
