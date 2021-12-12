@@ -17,7 +17,11 @@ Mandatory stacks are:
 No pre-configured data folder available.
 
 ### Create docker secrets
-No new docker secrets are required for running this stack. External secrets from service dependencies are required.
+Create the following docker secret to configure the admin user password.
+
+- `nextcloud_admin_password`: The password for the admin user
+
+External secrets from service dependencies are required.
 
 ### Create network
 No network needs to be created.
