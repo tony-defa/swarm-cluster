@@ -6,6 +6,7 @@ services:
     volumes:
       - nextcloud_data:/var/www/html/data
       - nextcloud_apps:/var/www/html/custom_apps
+      - nextcloud_config:/var/www/html/config
     secrets:
       - nextcloud_admin_password
       - mariadb_db_password
@@ -55,5 +56,12 @@ volumes:
     driver: local
     driver_opts:
       device: ${HOST_NEXTCLOUD_APPS}
+      type: none
+      o: bind
+
+  nextcloud_config:
+    driver: local
+    driver_opts:
+      device: ${HOST_NEXTCLOUD_CONFIG}
       type: none
       o: bind
