@@ -19,6 +19,7 @@ No pre-configured data folder available.
 ### Create docker secrets
 Create the following docker secret to configure the admin user password.
 
+- `nextcloud_admin_user`: The password for the admin user
 - `nextcloud_admin_password`: The password for the admin user
 
 External secrets from service dependencies are required.
