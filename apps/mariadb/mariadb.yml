@@ -6,11 +6,13 @@ services:
     volumes:
       - mariadb_data:/var/lib/mysql
     secrets:
+      - mariadb_db_database
+      - mariadb_db_user
       - mariadb_db_password
       - mariadb_root_password
     environment:
-      - MARIADB_DATABASE=${DB_NAME}
-      - MARIADB_USER=${DB_USER}
+      - MARIADB_DATABASE_FILE=/run/secrets/mariadb_db_database
+      - MARIADB_USER_FILE=/run/secrets/mariadb_db_user
       - MARIADB_PASSWORD_FILE=/run/secrets/mariadb_db_password
       - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/mariadb_root_password
     command: ["mysqld", "--wait_timeout=28800", "--interactive_timeout=28800", "--max_allowed_packet=256M"]
@@ -25,6 +27,10 @@ services:
         condition: on-failure
 
 secrets:
+  mariadb_db_database:
+    external: true
+  mariadb_db_user:
+    external: true
   mariadb_db_password:
     external: true
   mariadb_root_password:

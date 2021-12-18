@@ -19,7 +19,9 @@ No pre-configured data folder available.
 Create the following docker secrets to configure the database passwords.
 
 - `mariadb_root_password`: The password for the root user
-- `mariadb_db_password`: The password associated to the `DB_USER` variable in the `.env`-file
+- `mariadb_db_database`: The database name
+- `mariadb_db_user`: The database non root user
+- `mariadb_db_password`: The password associated to the `mariadb_db_user` secret
 
 Use these secrets to stacks or services that need to connect to this database.
 
