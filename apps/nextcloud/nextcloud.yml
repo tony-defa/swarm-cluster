@@ -8,13 +8,17 @@ services:
       - nextcloud_apps:/var/www/html/custom_apps
       - nextcloud_config:/var/www/html/config
     secrets:
+      - nextcloud_admin_user
       - nextcloud_admin_password
+      - mariadb_db_database
+      - mariadb_db_user
       - mariadb_db_password
     environment:
       - MYSQL_HOST=${DB_HOST}
-      - MYSQL_DATABASE=${DB_NAME}
-      - MYSQL_USER=${DB_USER}
+      - MYSQL_DATABASE_FILE=/run/secrets/mariadb_db_database
+      - MYSQL_USER_FILE=/run/secrets/mariadb_db_user
       - MYSQL_PASSWORD_FILE=/run/secrets/mariadb_db_password
+      - NEXTCLOUD_ADMIN_USER_FILE=/run/secrets/nextcloud_admin_user
       - NEXTCLOUD_ADMIN_PASSWORD_FILE=/run/secrets/nextcloud_admin_password
     networks:
       - mariadb_network
@@ -35,7 +39,13 @@ services:
       #   traefik.http.services.nextcloud.loadbalancer.server.port: 80
 
 secrets:
+  nextcloud_admin_user:
+    external: true
   nextcloud_admin_password:
+    external: true
+  mariadb_db_database:
+    external: true
+  mariadb_db_user:
     external: true
   mariadb_db_password:
     external: true
