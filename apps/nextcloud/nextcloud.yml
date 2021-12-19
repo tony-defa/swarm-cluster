@@ -3,6 +3,7 @@ version: '3.9'
 services:
   nextcloud:
     image: nextcloud
+    env_file: .env
     volumes:
       - nextcloud_data:/var/www/html/data
       - nextcloud_apps:/var/www/html/custom_apps
@@ -14,7 +15,6 @@ services:
       - mariadb_db_user
       - mariadb_db_password
     environment:
-      - MYSQL_HOST=${DB_HOST}
       - MYSQL_DATABASE_FILE=/run/secrets/mariadb_db_database
       - MYSQL_USER_FILE=/run/secrets/mariadb_db_user
       - MYSQL_PASSWORD_FILE=/run/secrets/mariadb_db_password
