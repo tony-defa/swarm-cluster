@@ -21,6 +21,7 @@ services:
       - --interactive_timeout=28800
       - --max_allowed_packet=256M
       - --transaction-isolation=READ-COMMITTED
+      - --max_connections=1000
       - --binlog-format=ROW
       - --innodb-read-only-compressed=OFF
     networks:
