@@ -36,7 +36,7 @@ services:
 
   wordpress-db:
     <<: *default-opts
-    image: mysql:${MYSQL_TAG}
+    image: mariadb:${MARIADB_TAG}
     networks:
       - wp_network
     volumes:
@@ -51,7 +51,7 @@ services:
 
   wordpress-backup:
     <<: *default-opts
-    image: mysql:${MYSQL_TAG}
+    image: mariadb:${MARIADB_TAG}
     command: 
       - sh
       - -c
