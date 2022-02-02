@@ -48,7 +48,30 @@ services:
     deploy:
       mode: replicated
       replicas: 1
-      
+
+  wordpress-backup:
+    <<: *default-opts
+    image: mysql:5.7
+    command: 
+      - sh
+      - -c
+      - | 
+        while true; do
+          backup_dir=/backup/wordpress_$$(date +'%Y%m%d_%H%M%S');
+          mkdir -p $$backup_dir/data;
+          /usr/bin/mysqldump -u $$DB_USER --password=$$DB_PASSWORD --host=wordpress-db --databases $$DB_NAME --no-tablespaces > $$backup_dir/db.sql;
+          cp -r /data/* $$backup_dir/data/.;
+          sleep 21600;
+        done
+    volumes:
+      - wordpress_backup:/backup
+      - wordpress_data:/data
+    networks:
+      - wp_network
+    deploy:
+      restart_policy:
+        delay: 600s
+
 networks:
   public_network:
     external: true
@@ -74,5 +97,15 @@ volumes:
       type: none
       o: bind
       # device: ":${HOST_WORDPRESS_DB?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  wordpress_backup:
+    driver: local
+    driver_opts:
+      device: ${HOST_WORDPRESS_BACKUP}
+      type: none
+      o: bind
+      # device: ":${HOST_WORDPRESS_BACKUP?Variable not set}"
       # type: nfs
       # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
