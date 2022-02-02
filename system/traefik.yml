@@ -50,6 +50,13 @@ services:
       # - --certificatesResolvers.letsencrypt.acme.storage=/data/acme.json
       # - --certificatesResolvers.letsencrypt.acme.keyType=EC384
       # - --certificatesResolvers.letsencrypt.acme.httpChallenge.entryPoint=web
+
+      # Prometheus configuration
+      - --metrics.prometheus=true
+      - --metrics.prometheus.addEntryPointsLabels=true
+      - --metrics.prometheus.addServicesLabels=true
+      - --metrics.prometheus.entryPoint=metrics
+      - --entryPoints.metrics.address=:8082
     networks:
       - public_network
     volumes:
@@ -60,6 +67,7 @@ services:
       - "80:80"
       - "443:443"
       - "8080:8080"
+      - "8082:8082"
     deploy:
       placement:
         constraints: 
