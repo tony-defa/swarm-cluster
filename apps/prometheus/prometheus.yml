@@ -1,0 +1,43 @@
+version: '3.8'
+
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://127.0.0.1:12201"
+
+services:
+  prometheus:
+    <<: *default-opts
+    image: prom/prometheus:${PROMETHEUS_TAG}
+    ports:
+      - 9999:9090
+    volumes:
+      - prometheus_data:/etc/prometheus
+    networks:
+      - metrics_network
+    command:
+      - --config.file=/etc/prometheus/prometheus-config.yml
+      - --web.enable-lifecycle
+    deploy:
+      mode: replicated
+      replicas: 1
+
+networks:
+  metrics_network:
+    external: true
+
+volumes:
+  prometheus_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_PROMETHEUS_DATA}
+      type: none
+      o: bind
+      # device: ":${HOST_PROMETHEUS_DATA?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
