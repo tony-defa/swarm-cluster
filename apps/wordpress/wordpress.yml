@@ -13,7 +13,7 @@ x-default-opts: &default-opts
 services:
   wordpress:
     <<: *default-opts
-    image: wordpress
+    image: wordpress:${WORDPRESS_TAG}
     networks:
       - public_network
       - wp_network
@@ -29,14 +29,14 @@ services:
       replicas: 1
       labels:
         traefik.enable: "true"
-        traefik.http.routers.wordpress.entrypoints: websecure
+        traefik.http.routers.wordpress.entrypoints: web
         traefik.http.routers.wordpress.rule: Host(`${EXTERNAL_DOMAIN?Variable not set}`)
         traefik.http.routers.wordpress.service: wordpress
         traefik.http.services.wordpress.loadbalancer.server.port: 80
 
   wordpress-db:
     <<: *default-opts
-    image: mysql:5.7
+    image: mysql:${MYSQL_TAG}
     networks:
       - wp_network
     volumes:
@@ -51,7 +51,7 @@ services:
 
   wordpress-backup:
     <<: *default-opts
-    image: mysql:5.7
+    image: mysql:${MYSQL_TAG}
     command: 
       - sh
       - -c
