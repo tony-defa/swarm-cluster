@@ -17,6 +17,9 @@ A centralized storage solution is required for the following stacks:
 - `portainer.yml`
 
 ### Service dependencies
+`traefik.yml` requires the following services to run:
+- `apps/prometheus/prometheus.yml`
+
 `portainer.yml` requires the following services to run:
 - `traefik.yml`
 

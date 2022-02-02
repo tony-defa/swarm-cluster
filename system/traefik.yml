@@ -59,6 +59,7 @@ services:
       - --entryPoints.metrics.address=:8082
     networks:
       - public_network
+      - metrics_network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /etc/localtime:/etc/localtime:ro
@@ -72,9 +73,16 @@ services:
       placement:
         constraints: 
           - node.role == manager
+      update_config:
+        delay: 10s
+        order: start-first
+        parallelism: 1
 
 networks:
   public_network:
+    external: true
+
+  metrics_network:
     external: true
 
 volumes:
