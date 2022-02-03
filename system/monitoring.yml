@@ -27,6 +27,31 @@ services:
       mode: replicated
       replicas: 1
 
+  node-exporter:
+    image: prom/node-exporter:v1.3.1
+    networks:
+      - metrics_network
+    environment:
+      - NODE_ID={{.Node.ID}}
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+      - /etc/hostname:/etc/nodename:ro
+    command:
+      - '--path.sysfs=/host/sys'
+      - '--path.procfs=/host/proc'
+      - '--collector.textfile.directory=/etc/node-exporter/'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--no-collector.ipvs'
+    deploy:
+      mode: global
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
   grafana:
     <<: *default-opts
     image: grafana/grafana-oss:${GRAFANA_TAG}
