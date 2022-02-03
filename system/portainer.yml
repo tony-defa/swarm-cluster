@@ -11,7 +11,7 @@ x-default-opts: &default-opts
 services:
   agent:
     <<: *default-opts
-    image: portainer/agent:latest
+    image: portainer/agent:${PORTAINER_TAG}
     environment:
       AGENT_CLUSTER_ADDR: tasks.agent
       AGENT_PORT: 9001
@@ -29,7 +29,7 @@ services:
 
   portainer:
     <<: *default-opts
-    image: portainer/portainer-ce:latest
+    image: portainer/portainer-ce:${PORTAINER_TAG}
     command: -H tcp://tasks.agent:9001 --tlsskipverify
     networks:
       - agent_network
@@ -43,7 +43,7 @@ services:
         constraints: 
           - node.role == manager
     ports:
-      - "8000:9000"
+      - "8001:9000"
 
 networks:
   public_network:
