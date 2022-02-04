@@ -1,0 +1,60 @@
+version: '3.9'
+
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://127.0.0.1:12201"
+ 
+services:
+  xwiki:
+    <<: *default-opts
+    image: "xwiki:lts"
+    volumes:
+      - xwiki_data:/usr/local/xwiki
+    secrets:
+      - mariadb_db_user
+      - mariadb_db_password
+      - mariadb_db_database
+    environment:
+      - DB_USER_FILE=/run/secrets/mariadb_db_user
+      - DB_PASSWORD_FILE=/run/secrets/mariadb_db_password
+      - DB_DATABASE_FILE=/run/secrets/mariadb_db_database
+    networks:
+      - mariadb_network
+    ports:
+      - "8081:8080"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      # labels:
+      #   traefik.enable: "true"
+      #   traefik.http.routers.xwiki.entrypoints: web
+      #   traefik.http.routers.xwiki.rule: Host(`${EXTERNAL_DOMAIN?Variable not set}`)
+      #   traefik.http.routers.xwiki.service: xwiki
+      #   traefik.http.services.xwiki.loadbalancer.server.port: 80
+
+secrets:
+  mariadb_db_database:
+    external: true
+  mariadb_db_user:
+    external: true
+  mariadb_db_password:
+    external: true
+      
+networks:
+  mariadb_network:
+    external: true
+
+volumes:
+  xwiki_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_XWIKI_DATA}
+      type: none
+      o: bind
