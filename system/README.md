@@ -79,7 +79,8 @@ $ docker network create -d overlay public_network
 | Traefik Dashboard | 8002 |
 | Grafana Dashboard | 8003 |
 | Prometheus | 9999 |
-| Traefik Metrics | 9998 |
+| Alertmanager | 9998 |
+| Traefik Metrics | 9997 |
 
 ### Prometheus
 Prometheus is running with the `--web.enable-lifecycle` flag. This means that the configuration files can be reloaded at runtime,

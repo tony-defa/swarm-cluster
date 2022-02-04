@@ -21,8 +21,23 @@ services:
     networks:
       - metrics_network
     command:
-      - --config.file=/etc/prometheus/prometheus-config.yml
+      - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-lifecycle
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  alertmanager:
+    <<: *default-opts
+    image: prom/alertmanager:${ALERTMANAGER_TAG}
+    ports:
+      - 9998:9093
+    volumes:
+      - alertmanager_data:/etc/alertmanager
+    networks:
+      - metrics_network
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
     deploy:
       mode: replicated
       replicas: 1
@@ -77,6 +92,16 @@ volumes:
       type: none
       o: bind
       # device: ":${HOST_PROMETHEUS_DATA?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  alertmanager_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_ALERTMANAGER_DATA}
+      type: none
+      o: bind
+      # device: ":${HOST_ALERTMANAGER_DATA?Variable not set}"
       # type: nfs
       # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
 
