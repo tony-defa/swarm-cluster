@@ -1,0 +1,112 @@
+version: '3.8'
+
+x-default-opts: &default-opts
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://127.0.0.1:12201"
+ 
+services:
+  openldap:
+    <<: *default-opts
+    env_file:
+      .env
+    image: osixia/openldap:${OPEN_LDAP_TAG}
+    volumes:
+      - ldap_database:/var/lib/ldap
+      - ldap_config:/etc/ldap/slapd.d
+    secrets:
+      - ldap_admin_password
+      - ldap_config_password
+      - ldap_ro_user_password
+    environment:
+      - LDAP_ADMIN_PASSWORD_FILE=/run/secrets/ldap_admin_password
+      - LDAP_CONFIG_PASSWORD_FILE=/run/secrets/ldap_config_password
+      - LDAP_READONLY_USER_PASSWORD_FILE=/run/secrets/ldap_ro_user_password
+    networks:
+      - ldap_network
+    ports:
+      - "389:389"
+      - "636:636"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  openldap-admin:
+    <<: *default-opts
+    image: osixia/phpldapadmin:${LDAP_ADMIN_TAG}
+    environment:
+      - PHPLDAPADMIN_LDAP_HOSTS=openldap
+      - PHPLDAPADMIN_HTTPS=false
+    networks:
+      - ldap_network
+    ports:
+      - "6443:80"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  openldap-backup:
+    <<: *default-opts
+    image: osixia/openldap-backup:${OPEN_LDAP_TAG}
+    volumes:
+      - ldap_database:/var/lib/ldap
+      - ldap_config:/etc/ldap/slapd.d
+      - ldap_backup:/data/backup
+    environment:
+      - LDAP_BACKUP_TTL=10
+      - LDAP_BACKUP_CONFIG_CRON_EXP=* 4 * * *
+      - LDAP_BACKUP_DATA_CRON_EXP=* 4 * * *
+    networks:
+      - ldap_network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+secrets:
+  ldap_admin_password:
+    external: true
+  ldap_config_password:
+    external: true
+  ldap_ro_user_password:
+    external: true
+      
+networks:
+  ldap_network:
+    driver: overlay
+
+volumes:
+  ldap_database:
+    driver: local
+    driver_opts:
+      device: ${HOST_LDAP_DATABASE}
+      type: none
+      o: bind
+      # device: ":${HOST_LDAP_DATABASE?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  ldap_config:
+    driver: local
+    driver_opts:
+      device: ${HOST_LDAP_CONFIG}
+      type: none
+      o: bind
+      # device: ":${HOST_LDAP_CONFIG?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  ldap_backup:
+    driver: local
+    driver_opts:
+      device: ${HOST_LDAP_BACKUP}
+      type: none
+      o: bind
+      # device: ":${HOST_LDAP_BACKUP?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
