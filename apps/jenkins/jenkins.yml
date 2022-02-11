@@ -1,10 +1,17 @@
 version: '3.9'
 
+x-default-opts: &default-opts
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://127.0.0.1:12201"
+
 services:
   jenkins:
-    image: jenkins/jenkins:lts
-    ports:
-      - '8083:8080'
+    <<: *default-opts
+    image: jenkins/jenkins:${JENKINS_TAG}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - jenkins_data:/var/jenkins_home
@@ -16,7 +23,7 @@ services:
         traefik.http.routers.jenkins.entrypoints: websecure
         traefik.http.routers.jenkins.rule: Host(`${EXTERNAL_DOMAIN?Variable not set}`)
         traefik.http.routers.jenkins.service: jenkins
-        traefik.http.services.jenkins.loadbalancer.server.port: 80
+        traefik.http.services.jenkins.loadbalancer.server.port: 8080
 
 networks:
   nexus_network:
