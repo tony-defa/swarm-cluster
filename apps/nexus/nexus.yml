@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  nexus:
+    image: ${NEXUS_IMAGE}:${NEXUS_TAG}
+    networks:
+      - nexus_network
+    ports:
+      - "8082:8081"
+    volumes:
+      - nexus_data:/nexus-data
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.nexus.entrypoints: websecure
+        traefik.http.routers.nexus.rule: Host(`${EXTERNAL_DOMAIN?Variable not set}`)
+        traefik.http.routers.nexus.service: nexus
+        traefik.http.services.nexus.loadbalancer.server.port: 80
+
+networks:
+  nexus_network:
+    driver: overlay
+
+volumes:
+  nexus_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_NEXUS_DATA}
+      type: none
+      o: bind
+      # device: ":${HOST_NEXUS_DATA?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
