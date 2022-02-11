@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:${GITLAB_TAG}
+    networks:
+      - gitlab_network
+    ports:
+      - "22:22"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - gitlab_data:/var/opt/gitlab
+      - gitlab_config:/etc/gitlab
+      - gitlab_logs:/var/log/gitlab
+    environment:
+      GITLAB_OMNIBUS_CONFIG: "from_file('/omnibus_config.rb')"
+    configs:
+      - source: gitlab
+        target: /omnibus_config.rb
+    secrets:
+      - gitlab_root_password
+
+configs:
+  gitlab:
+    file: ./.rb
+
+secrets:
+  gitlab_root_password:
+    external: true
+      
+networks:
+  gitlab_network:
+    driver: overlay
+    attachable: true
+
+volumes:
+  gitlab_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_GITLAB_DATA}
+      type: none
+      o: bind
+      # device: ":${HOST_GITLAB_DATA?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  gitlab_config:
+    driver: local
+    driver_opts:
+      device: ${HOST_GITLAB_CONFIG}
+      type: none
+      o: bind
+      # device: ":${HOST_GITLAB_CONFIG?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  gitlab_logs:
+    driver: local
+    driver_opts:
+      device: ${HOST_GITLAB_LOGS}
+      type: none
+      o: bind
+      # device: ":${HOST_GITLAB_LOGS?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1

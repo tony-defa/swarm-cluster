@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  gitlab-runner-register:
+    image: gitlab/gitlab-runner:${GITLAB_RUNNER_TAG}
+    command:
+      - register
+      - --non-interactive
+      - --url=http://gitlab/
+      - --registration-token=${RUNNER_REGISTRATION_TOKEN}
+      - --executor=docker
+      - --docker-image=alpine:latest
+      - --description=gitlab-runner
+      - --tag-list="test-cicd,dockercicd"
+      - --run-untagged=true
+      - --locked=false
+      - --limit=1
+      - --docker-network-mode=gitlab_gitlab_network
+    volumes:
+      - gitlab_runner_config:/etc/gitlab-runner
+    environment:
+      - SLOT_ID={{.Task.Slot}}
+    networks:
+      - gitlab_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: none
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:${GITLAB_RUNNER_TAG}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - gitlab_runner_config:/etc/gitlab-runner
+    networks:
+      - gitlab_network
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    deploy:
+      mode: replicated
+      replicas: 1
+      
+networks:
+  gitlab_network:
+    external: true
+    name: gitlab_gitlab_network
+
+volumes:
+  gitlab_runner_config: {}
