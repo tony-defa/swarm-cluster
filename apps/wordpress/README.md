@@ -7,7 +7,7 @@ Contains both wordpress and the underling database.
 
 ## Perquisites
 ### Storage
-A centralized storage solution is not required.
+A centralized storage solution is required.
 
 ### Service dependencies
 Mandatory stacks are:
