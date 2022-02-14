@@ -57,11 +57,11 @@ services:
       - -c
       - | 
         while true; do
+          sleep $$BACKUP_FREQUENCY;
           backup_dir=/backup/wordpress_$$(date +'%Y%m%d_%H%M%S');
           mkdir -p $$backup_dir/data;
           /usr/bin/mysqldump -u $$DB_USER --password=$$DB_PASSWORD --host=wordpress-db --databases $$DB_NAME --no-tablespaces > $$backup_dir/db.sql;
           cp -r /data/* $$backup_dir/data/.;
-          sleep 21600;
         done
     volumes:
       - wordpress_backup:/backup
