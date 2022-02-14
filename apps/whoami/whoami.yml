@@ -20,8 +20,15 @@ services:
         traefik.http.routers.whoami.rule: Host(`${EXTERNAL_DOMAIN?Variable not set}`)
         traefik.http.routers.whoami.service: whoami
         traefik.http.services.whoami.loadbalancer.server.port: 80
+
         # traefik.http.services.whoami.loadBalancer.sticky.cookie: "true"
         # traefik.http.services.whoami.loadBalancer.sticky.cookie.name: "sticky_whoami"
+
+        # traefik.http.routers.wordpress.middlewares: header-ratelimiter@docker
+        # traefik.http.middlewares.header-ratelimiter.ratelimit.average: 20
+        # traefik.http.middlewares.header-ratelimiter.ratelimit.period: 1s
+        # traefik.http.middlewares.header-ratelimiter.ratelimit.burst: 50
+        # traefik.http.middlewares.header-ratelimiter.ratelimit.sourcecriterion.requestheadername: HEADER-NAME
 
 networks:
   public_network:
