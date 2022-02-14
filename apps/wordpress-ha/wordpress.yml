@@ -1,0 +1,186 @@
+version: '3.8'
+
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://127.0.0.1:12201"
+
+services:
+  wordpress:
+    <<: *default-opts
+    image: wordpress:${WORDPRESS_TAG}
+    networks:
+      - public_network
+      - wp_network
+    volumes:
+      - wordpress_data:/var/www/html
+    environment:
+      - WORDPRESS_DB_HOST=db
+      - WORDPRESS_DB_NAME=${DB_NAME}
+      - WORDPRESS_DB_USER=${DB_USER}
+      - WORDPRESS_DB_PASSWORD=${DB_PASSWORD}
+      - REPLICA_DB_HOST=db-slave
+      - REPLICA_DB_NAME=${DB_NAME}
+      - REPLICA_DB_USER=${DB_USER}
+      - REPLICA_DB_PASSWORD=${DB_PASSWORD}
+    entrypoint:
+      - bash
+      - -c
+      - | 
+        hdb=/var/www/html/wp-content/db.php
+        hdb_config=/var/www/html/db-config.php
+
+        if [[ ! -f "$$hdb" || ! -f "$$hdb_config" ]]; then
+          echo "Installing HyperDB..." 
+
+          curl -s https://raw.githubusercontent.com/Automattic/HyperDB/trunk/db.php --output $$hdb;
+          curl -s https://raw.githubusercontent.com/Automattic/HyperDB/trunk/db-config.php --output $$hdb_config;
+          sed -i '/Sample Configuration 1/,/Sample Configuration 2/{/Sample Configuration 2/!d}' $$hdb_config;
+          
+          cat << EOF >> $$hdb_config
+
+            \$$wpdb->add_database( array(
+              'host'     => DB_HOST,
+              'user'     => DB_USER,
+              'password' => DB_PASSWORD,
+              'name'     => DB_NAME,
+              'write'    => 1, // primary server takes write queries
+              'read'     => empty( getenv_docker('REPLICA_DB_HOST', false ) ) ? 1 : 0, // ... and read queries only if no replica is set
+            ) );
+            
+            if ( ! empty( getenv_docker('REPLICA_DB_HOST', false ) ) ) {
+              \$$wpdb->add_database(array(
+                'host'     => getenv_docker('REPLICA_DB_HOST', ''),
+                'user'     => getenv_docker('REPLICA_DB_USER', ''),
+                'password' => getenv_docker('REPLICA_DB_PASSWORD', ''),
+                'name'     => getenv_docker('REPLICA_DB_NAME', ''),
+                'write'    => 0, // replica doesn't take write queries
+                'read'     => 1, // ... but it does take read queries
+              ));
+            }
+        EOF
+          # keep previous EOF un-indented
+          echo "...HyperDB installed"
+        fi
+        docker-entrypoint.sh apache2-foreground
+    deploy:
+      mode: replicated
+      replicas: 2
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.wordpress.entrypoints: websecure
+        traefik.http.routers.wordpress.rule: Host(`${EXTERNAL_DOMAIN?Variable not set}`)
+        traefik.http.routers.wordpress.service: wordpress
+        traefik.http.services.wordpress.loadbalancer.server.port: 80
+
+  db:
+    <<: *default-opts
+    image: bitnami/mariadb:${MARIADB_TAG}
+    volumes:
+      - wordpress_db:/bitnami/mariadb
+    environment:
+      - MARIADB_DATABASE=${DB_NAME}
+      - MARIADB_USER=${DB_USER}
+      - MARIADB_PASSWORD=${DB_PASSWORD}
+      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MARIADB_REPLICATION_MODE=master
+      - MARIADB_REPLICATION_USER=${DB_REPLICATION_USER}
+      - MARIADB_REPLICATION_PASSWORD=${DB_PASSWORD}
+      - MARIADB_SKIP_TEST_DB=yes
+      #- MARIADB_EXTRA_FLAGS='--wait_timeout=28800 --interactive_timeout=28800 --max_allowed_packet=256M'
+    networks:
+      - wp_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  db-slave:
+    <<: *default-opts
+    image: bitnami/mariadb:${MARIADB_TAG}
+    environment:
+      - MARIADB_REPLICATION_MODE=slave
+      - MARIADB_REPLICATION_USER=${DB_REPLICATION_USER}
+      - MARIADB_REPLICATION_PASSWORD=${DB_PASSWORD}
+      - MARIADB_MASTER_HOST=db
+      - MARIADB_MASTER_PORT_NUMBER=3306
+      - MARIADB_MASTER_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      #- MARIADB_EXTRA_FLAGS='--wait_timeout=28800 --interactive_timeout=28800 --max_allowed_packet=256M'
+    networks:
+      - wp_network
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  backup:
+    <<: *default-opts
+    image: mariadb
+    command: 
+      - sh
+      - -c
+      - | 
+        while true; do
+          sleep $$BACKUP_FREQUENCY;
+          backup_dir=/backup/wordpress_$$(date +'%Y%m%d_%H%M%S');
+          mkdir -p $$backup_dir/data;
+          /usr/bin/mysqldump -u $$DB_USER --password=$$DB_PASSWORD --host=db --databases $$DB_NAME --no-tablespaces > $$backup_dir/db.sql;
+          cp -r /data/* $$backup_dir/data/.;
+        done
+    volumes:
+      - wordpress_backup:/backup
+      - wordpress_data:/data
+    networks:
+      - wp_network
+    deploy:
+      restart_policy:
+        delay: 600s
+
+networks:
+  public_network:
+    external: true
+    
+  wp_network:
+    driver: overlay
+
+volumes:
+  wordpress_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_WORDPRESS_DATA}
+      type: none
+      o: bind
+      # device: ":${HOST_WORDPRESS_DATA?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  wordpress_db:
+    driver: local
+    driver_opts:
+      device: ${HOST_WORDPRESS_DB}
+      type: none
+      o: bind
+      # device: ":${HOST_WORDPRESS_DB?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  wordpress_backup:
+    driver: local
+    driver_opts:
+      device: ${HOST_WORDPRESS_BACKUP}
+      type: none
+      o: bind
+      # device: ":${HOST_WORDPRESS_BACKUP?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
