@@ -3,7 +3,7 @@
 The WordPress rich content management system can utilize plugins, widgets, and themes.
 
 ### `wordpress.yml`
-Contains both wordpress and the underling database.
+Contains both wordpress and the underling database. There is also a script, that backups the wp files and database tables.
 
 ## Perquisites
 ### Storage
