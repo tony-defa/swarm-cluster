@@ -7,6 +7,9 @@ mkdir -p $DATA_PATH
 touch "${DATA_PATH}/users.txt"
 touch "${DATA_PATH}/acme.json"
 
+chmod 600 "${DATA_PATH}/users.txt"
+chmod 600 "${DATA_PATH}/acme.json"
+
 tee -a "${DATA_PATH}/dynamic.yml" > /dev/null <<EOF
 # Dynamic configuration
 http:
