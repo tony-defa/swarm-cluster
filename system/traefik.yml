@@ -35,23 +35,41 @@ services:
       - --providers.file.filename=/data/dynamic.yml
 
       # Entry points configuration
+      ## web and websecure
       - --entryPoints.web.address=:7080
       ## https redirection and configuration
-      - --entrypoints.web.http.redirections.entryPoint.to=websecure
-      - --entrypoints.web.http.redirections.entryPoint.scheme=https
-      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+      - --entryPoints.web.http.redirections.entryPoint.to=websecure
+      - --entryPoints.web.http.redirections.entryPoint.scheme=https
+      - --entryPoints.web.http.redirections.entrypoint.permanent=true
 
-      - --entrypoints.websecure.address=:7443
-      - --entrypoints.websecure.http.middlewares=secureHeaders@file
+      - --entryPoints.websecure.address=:7443
+      - --entryPoints.websecure.http.middlewares=secureHeaders@file
 
       # Certificate configuration
-      # - --entrypoints.websecure.http.tls.certResolver=letsencrypt
+      # - --entryPoints.websecure.http.tls.certResolver=letsencrypt
       # - --certificatesResolvers.letsencrypt.acme.email=${LE_ACME_EMAIL?Variable not set}
       # - --certificatesResolvers.letsencrypt.acme.storage=/data/acme.json
       # - --certificatesResolvers.letsencrypt.acme.keyType=EC384
       # - --certificatesResolvers.letsencrypt.acme.httpChallenge.entryPoint=web
 
-      - --entryPoints.internal.address=:80
+      ## int and intsecure
+      - --entryPoints.int.address=:80
+      ## https redirection and configuration
+      - --entryPoints.int.http.redirections.entryPoint.to=intsecure
+      - --entryPoints.int.http.redirections.entryPoint.scheme=https
+      - --entryPoints.int.http.redirections.entrypoint.permanent=true
+
+      - --entryPoints.intsecure.address=:443
+      - --entryPoints.intsecure.http.middlewares=secureHeaders@file
+
+      # Certificate configuration
+      # - --entryPoints.intsecure.http.tls.certResolver=linode-dnschallenge
+      # - --entryPoints.intsecure.http.tls.domains[0].main=${INTERNAL_DOMAIN?Variable not set}
+      # - --entryPoints.intsecure.http.tls.domains[0].sans=*.${INTERNAL_DOMAIN?Variable not set}
+      # - --certificatesResolvers.linode-dnschallenge.acme.dnschallenge=true
+      # - --certificatesResolvers.linode-dnschallenge.acme.dnschallenge.provider=linode
+      # - --certificatesResolvers.linode-dnschallenge.acme.email=${DNS_ACME_EMAIL?Variable not set}
+      # - --certificatesResolvers.linode-dnschallenge.acme.storage=/data/acme.json
 
       # Prometheus configuration
       - --metrics.prometheus=true
@@ -59,6 +77,10 @@ services:
       - --metrics.prometheus.addServicesLabels=true
       - --metrics.prometheus.entryPoint=metrics
       - --entryPoints.metrics.address=:8082
+    # secrets:
+    #   - linode_dns_token
+    # environment:
+    #   - LINODE_TOKEN_FILE=/run/secrets/linode_dns_token
     networks:
       - public_network
       - metrics_network
@@ -68,6 +90,7 @@ services:
       - traefik_data:/data
     ports:
       - "80:80"
+      - "443:443"
       - "7080:7080"
       - "7443:7443"
     deploy:
@@ -80,7 +103,7 @@ services:
         parallelism: 1
       labels:
         traefik.enable: "true"
-        traefik.http.routers.traefik.entrypoints: ${TRAEFIK_ENTRYPOINT:-internal}
+        traefik.http.routers.traefik.entrypoints: ${TRAEFIK_ENTRYPOINT:-intsecure}
         traefik.http.routers.traefik.rule: Host(`${TRAEFIK_DOMAIN:-traefik.localhost}`)
         traefik.http.routers.traefik.service: traefik
         traefik.http.services.traefik.loadbalancer.server.port: 8080
@@ -91,6 +114,10 @@ networks:
 
   metrics_network:
     external: true
+
+# secrets:
+#   linode_dns_token:
+#     external: true
 
 volumes:
   traefik_data:

@@ -26,7 +26,7 @@ services:
       replicas: 1
       labels:
         traefik.enable: "true"
-        traefik.http.routers.gitlab.entrypoints: ${ENTRYPOINT:-internal}
+        traefik.http.routers.gitlab.entrypoints: ${ENTRYPOINT:-intsecure}
         traefik.http.routers.gitlab.rule: Host(`${DOMAIN:-gitlab.localhost}`)
         traefik.http.routers.gitlab.service: gitlab
         traefik.http.services.gitlab.loadbalancer.server.port: 80

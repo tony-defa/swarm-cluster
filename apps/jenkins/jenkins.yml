@@ -22,7 +22,7 @@ services:
       replicas: 1
       labels:
         traefik.enable: "true"
-        traefik.http.routers.jenkins.entrypoints: ${ENTRYPOINT:-internal}
+        traefik.http.routers.jenkins.entrypoints: ${ENTRYPOINT:-intsecure}
         traefik.http.routers.jenkins.rule: Host(`${DOMAIN:-nexus.localhost}`)
         traefik.http.routers.jenkins.service: jenkins
         traefik.http.services.jenkins.loadbalancer.server.port: 8080

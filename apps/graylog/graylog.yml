@@ -72,7 +72,7 @@ services:
     deploy:
       labels:
         traefik.enable: "true"
-        traefik.http.routers.graylog.entrypoints: ${ENTRYPOINT:-internal}
+        traefik.http.routers.graylog.entrypoints: ${ENTRYPOINT:-intsecure}
         traefik.http.routers.graylog.rule: Host(`${DOMAIN:-graylog.localhost}`)
         traefik.http.routers.graylog.service: graylog
         traefik.http.services.graylog.loadbalancer.server.port: 9000
