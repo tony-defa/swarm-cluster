@@ -10,7 +10,8 @@ Contains graylog and the required backend for running properly.
 A centralized storage solution is required.
 
 ### Service dependencies
-There are no dependencies.
+Mandatory stacks are:
+- `system/traefik.yml`
 
 ### Create pre-configured data folder
 No pre-configured data folder available for first start. You might consider coping the data from an existing graylog instance to avoid reconfiguring everything.

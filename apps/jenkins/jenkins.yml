@@ -12,6 +12,8 @@ services:
   jenkins:
     <<: *default-opts
     image: jenkins/jenkins:${JENKINS_TAG}
+    networks:
+      - public_network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - jenkins_data:/var/jenkins_home
@@ -20,14 +22,14 @@ services:
       replicas: 1
       labels:
         traefik.enable: "true"
-        traefik.http.routers.jenkins.entrypoints: websecure
-        traefik.http.routers.jenkins.rule: Host(`${EXTERNAL_DOMAIN?Variable not set}`)
+        traefik.http.routers.jenkins.entrypoints: ${ENTRYPOINT:-internal}
+        traefik.http.routers.jenkins.rule: Host(`${DOMAIN:-nexus.localhost}`)
         traefik.http.routers.jenkins.service: jenkins
         traefik.http.services.jenkins.loadbalancer.server.port: 8080
 
 networks:
-  nexus_network:
-    driver: overlay
+  public_network:
+    external: true
 
 volumes:
   jenkins_data:

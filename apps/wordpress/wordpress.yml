@@ -29,8 +29,8 @@ services:
       replicas: 1
       labels:
         traefik.enable: "true"
-        traefik.http.routers.wordpress.entrypoints: websecure
-        traefik.http.routers.wordpress.rule: Host(`${EXTERNAL_DOMAIN?Variable not set}`)
+        traefik.http.routers.wordpress.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.wordpress.rule: Host(`${DOMAIN?Variable not set}`)
         traefik.http.routers.wordpress.service: wordpress
         traefik.http.services.wordpress.loadbalancer.server.port: 80
 

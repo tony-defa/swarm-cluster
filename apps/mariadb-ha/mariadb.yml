@@ -31,8 +31,6 @@ services:
 
   db-slave:
     image: bitnami/mariadb
-    depends_on:
-      - db
     secrets:
       - mariadb_ha_root_password
       - mariadb_ha_replication_password

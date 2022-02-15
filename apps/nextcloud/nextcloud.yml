@@ -22,6 +22,7 @@ services:
       - NEXTCLOUD_ADMIN_PASSWORD_FILE=/run/secrets/nextcloud_admin_password
     networks:
       - mariadb_network
+      - public_network
     ports:
       - 9090:80
     deploy:
@@ -31,12 +32,12 @@ services:
         delay: 60s
       restart_policy:
         condition: on-failure
-      # labels:
-      #   traefik.enable: "true"
-      #   traefik.http.routers.nextcloud.entrypoints: web
-      #   traefik.http.routers.nextcloud.rule: Host(`${EXTERNAL_DOMAIN?Variable not set}`)
-      #   traefik.http.routers.nextcloud.service: nextcloud
-      #   traefik.http.services.nextcloud.loadbalancer.server.port: 80
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.nextcloud.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.nextcloud.rule: Host(`${DOMAIN?Variable not set}`)
+        traefik.http.routers.nextcloud.service: nextcloud
+        traefik.http.services.nextcloud.loadbalancer.server.port: 80
 
 secrets:
   nextcloud_admin_user:
@@ -52,6 +53,9 @@ secrets:
       
 networks:
   mariadb_network:
+    external: true
+    
+  public_network:
     external: true
 
 volumes:

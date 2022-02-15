@@ -14,33 +14,61 @@ services:
   prometheus:
     <<: *default-opts
     image: prom/prometheus:${PROMETHEUS_TAG}
-    ports:
-      - 9999:9090
     volumes:
       - prometheus_data:/etc/prometheus
     networks:
       - metrics_network
+      - public_network
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-lifecycle
     deploy:
       mode: replicated
       replicas: 1
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.prometheus.entrypoints: ${PROMETHEUS_ENTRYPOINT:-internal}
+        traefik.http.routers.prometheus.rule: Host(`${PROMETHEUS_DOMAIN:-prometheus.localhost}`)
+        traefik.http.routers.prometheus.service: prometheus
+        traefik.http.services.prometheus.loadbalancer.server.port: 9090
+
+  grafana:
+    <<: *default-opts
+    image: grafana/grafana-oss:${GRAFANA_TAG}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - metrics_network
+      - public_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.grafana.entrypoints: ${GRAFANA_ENTRYPOINT:-internal}
+        traefik.http.routers.grafana.rule: Host(`${GRAFANA_DOMAIN:-grafana.localhost}`)
+        traefik.http.routers.grafana.service: grafana
+        traefik.http.services.grafana.loadbalancer.server.port: 3000
 
   alertmanager:
     <<: *default-opts
     image: prom/alertmanager:${ALERTMANAGER_TAG}
-    ports:
-      - 9998:9093
     volumes:
       - alertmanager_data:/etc/alertmanager
     networks:
       - metrics_network
+      - public_network
     command:
       - --config.file=/etc/alertmanager/alertmanager.yml
     deploy:
       mode: replicated
       replicas: 1
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.alertmanager.entrypoints: ${ALERTMANAGER_ENTRYPOINT:-internal}
+        traefik.http.routers.alertmanager.rule: Host(`${ALERTMANAGER_DOMAIN:-alertmanager.localhost}`)
+        traefik.http.routers.alertmanager.service: alertmanager
+        traefik.http.services.alertmanager.loadbalancer.server.port: 9093
 
   node-exporter:
     image: prom/node-exporter:v1.3.1
@@ -67,21 +95,11 @@ services:
         reservations:
           memory: 64M
 
-  grafana:
-    <<: *default-opts
-    image: grafana/grafana-oss:${GRAFANA_TAG}
-    ports:
-      - 8003:3000
-    volumes:
-      - grafana_data:/var/lib/grafana
-    networks:
-      - metrics_network
-    deploy:
-      mode: replicated
-      replicas: 1
-
 networks:
   metrics_network:
+    external: true
+
+  public_network:
     external: true
 
 volumes:

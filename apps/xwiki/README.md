@@ -11,6 +11,7 @@ A centralized storage solution is required.
 
 ### Service dependencies
 Mandatory stacks are:
+- `system/traefik.yml`
 - `apps/mariadb.yml`
 
 ### Create pre-configured data folder

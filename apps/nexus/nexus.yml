@@ -13,7 +13,7 @@ services:
     <<: *default-opts
     image: ${NEXUS_IMAGE}:${NEXUS_TAG}
     networks:
-      - nexus_network
+      - public_network
     volumes:
       - nexus_data:/nexus-data
     deploy:
@@ -21,14 +21,14 @@ services:
       replicas: 1
       labels:
         traefik.enable: "true"
-        traefik.http.routers.nexus.entrypoints: websecure
-        traefik.http.routers.nexus.rule: Host(`${EXTERNAL_DOMAIN?Variable not set}`)
+        traefik.http.routers.nexus.entrypoints: ${ENTRYPOINT:-internal}
+        traefik.http.routers.nexus.rule: Host(`${DOMAIN:-nexus.localhost}`)
         traefik.http.routers.nexus.service: nexus
         traefik.http.services.nexus.loadbalancer.server.port: 8081
 
 networks:
-  nexus_network:
-    driver: overlay
+  public_network:
+    external: true
 
 volumes:
   nexus_data:

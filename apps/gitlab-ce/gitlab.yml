@@ -5,10 +5,11 @@ services:
     image: gitlab/gitlab-ce:${GITLAB_TAG}
     networks:
       - gitlab_network
-    ports:
-      - "22:22"
-      - "80:80"
-      - "443:443"
+      - public_network
+    # ports:
+    #   - "22:22"
+    #   - "80:80"
+    #   - "443:443"
     volumes:
       - gitlab_data:/var/opt/gitlab
       - gitlab_config:/etc/gitlab
@@ -20,6 +21,15 @@ services:
         target: /omnibus_config.rb
     secrets:
       - gitlab_root_password
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.gitlab.entrypoints: ${ENTRYPOINT:-internal}
+        traefik.http.routers.gitlab.rule: Host(`${DOMAIN:-gitlab.localhost}`)
+        traefik.http.routers.gitlab.service: gitlab
+        traefik.http.services.gitlab.loadbalancer.server.port: 80
 
 configs:
   gitlab:
@@ -33,6 +43,9 @@ networks:
   gitlab_network:
     driver: overlay
     attachable: true
+
+  public_network:
+    external: true
 
 volumes:
   gitlab_data:

@@ -25,10 +25,10 @@ A centralized storage solution is required for the following stacks:
 - `portainer.yml`
 
 ### Service dependencies
-`traefik.yml` requires the following services to run:
-- `monitoring.yml`
+`traefik.yml` requires the following network to exist (see [this](#create-network) section):
+- `metrics_network`
 
-`portainer.yml` requires the following services to run:
+`monitoring.yml` and `portainer.yml` require the following stack to run:
 - `traefik.yml`
 
 ### Create pre-configured data folder
@@ -60,6 +60,8 @@ $ htpasswd -nb <user> <password> | sudo tee "$(cat .env | grep "HOST_TRAEFIK_PAT
 > Replace the `<user>` and `<password>`placeholders.
 > Use `sudo` command as explained above.
 
+It is now possible to add the `user-auth` middleware as a service label [see here](#traefik). This will make sure that a route is only available after valid credentials have been provided.
+
 ### Create docker secrets
 No docker secrets are required.
 
@@ -72,16 +74,6 @@ $ docker network create -d overlay public_network
 ```
 
 ## Other notes
-### Ports 
-| App | Port |
-|---|---|
-| Portainer | 8001 |
-| Traefik Dashboard | 8002 |
-| Grafana Dashboard | 8003 |
-| Prometheus | 9999 |
-| Alertmanager | 9998 |
-| Traefik Metrics | 9997 |
-
 ### Prometheus
 Prometheus is running with the `--web.enable-lifecycle` flag. This means that the configuration files can be reloaded at runtime,
 when sending a HTTP POST request to the /-/reload endpoint. This will also reload any configured rule files.

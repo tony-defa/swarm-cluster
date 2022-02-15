@@ -14,7 +14,7 @@ services:
     image: traefik:${TRAEFIK_TAG}
     command: 
       - --log
-      - --log.level=DEBUG
+      - --log.level=INFO
       - --log.filePath=/data/traefik.log
       - --accesslog
       - --accesslog.filePath=/data/access.log
@@ -31,18 +31,18 @@ services:
       - --providers.docker.network=public_network
       - --providers.docker.endpoint=unix:///var/run/docker.sock
 
-      # - --providers.file.watch=true
-      # - --providers.file.filename=/data/dynamic.yml
+      - --providers.file.watch=true
+      - --providers.file.filename=/data/dynamic.yml
 
       # Entry points configuration
-      - --entryPoints.web.address=:80
-      ### https redirection and configuration
-      # - --entrypoints.web.http.redirections.entryPoint.to=websecure
-      # - --entrypoints.web.http.redirections.entryPoint.scheme=https
-      # - --entrypoints.web.http.redirections.entrypoint.permanent=true
+      - --entryPoints.web.address=:7080
+      ## https redirection and configuration
+      - --entrypoints.web.http.redirections.entryPoint.to=websecure
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
 
-      # - --entrypoints.websecure.address=:443
-      # - --entrypoints.websecure.http.middlewares=secureHeaders@file
+      - --entrypoints.websecure.address=:7443
+      - --entrypoints.websecure.http.middlewares=secureHeaders@file
 
       # Certificate configuration
       # - --entrypoints.websecure.http.tls.certResolver=letsencrypt
@@ -50,6 +50,8 @@ services:
       # - --certificatesResolvers.letsencrypt.acme.storage=/data/acme.json
       # - --certificatesResolvers.letsencrypt.acme.keyType=EC384
       # - --certificatesResolvers.letsencrypt.acme.httpChallenge.entryPoint=web
+
+      - --entryPoints.internal.address=:80
 
       # Prometheus configuration
       - --metrics.prometheus=true
@@ -66,9 +68,8 @@ services:
       - traefik_data:/data
     ports:
       - "80:80"
-      - "443:443"
-      - "8002:8080"
-      - "9997:8082"
+      - "7080:7080"
+      - "7443:7443"
     deploy:
       placement:
         constraints: 
@@ -77,6 +78,12 @@ services:
         delay: 10s
         order: start-first
         parallelism: 1
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.traefik.entrypoints: ${TRAEFIK_ENTRYPOINT:-internal}
+        traefik.http.routers.traefik.rule: Host(`${TRAEFIK_DOMAIN:-traefik.localhost}`)
+        traefik.http.routers.traefik.service: traefik
+        traefik.http.services.traefik.loadbalancer.server.port: 8080
 
 networks:
   public_network:

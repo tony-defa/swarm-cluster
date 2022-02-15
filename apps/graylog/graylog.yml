@@ -13,15 +13,16 @@ services:
   # MongoDB: https://hub.docker.com/_/mongo/
   mongo:
     <<: *default-opts
-    image: mongo:4.4
+    image: mongo:${MONGO_TAG}
     volumes:
       - mongo_data:/data/db
     networks:
       - graylog
+
   # Elasticsearch: https://www.elastic.co/guide/en/elasticsearch/reference/6.x/docker.html
   elasticsearch:
     <<: *default-opts
-    image: docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.2
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:${ELASTICSEARCH_TAG}
     volumes:
       - es_data:/usr/share/elasticsearch/data
     environment:
@@ -42,26 +43,24 @@ services:
           memory: 1g
     networks:
       - graylog
+
   # Graylog: https://hub.docker.com/r/graylog/graylog/
   graylog:
     <<: *default-opts
-    image: graylog/graylog:4.2
+    image: graylog/graylog:${GRAYLOG_TAG}
     volumes:
       - graylog_data:/usr/share/graylog/data
     environment:
-      - GRAYLOG_HTTP_EXTERNAL_IP=$$(ifconfig eth0 | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
-      - GRAYLOG_HTTP_EXTERNAL_URI=http://${GRAYLOG_HTTP_EXTERNAL_IP}:9000/
+      - GRAYLOG_HTTP_EXTERNAL_URI=http://${DOMAIN:-graylog.localhost}/
       # Added to tell graylog that we are using elasticsearch version 7 or above.
       # Omitting this will cause an error on startup, when running elasticsearch version > 7
       - GRAYLOG_ELASTICSEARCH_VERSION=7
     networks:
       - graylog
-    depends_on:
-      - mongo
-      - elasticsearch
+      - public_network
     ports:
       # Graylog web interface and REST API
-      - 9000:9000
+      # - 9000:9000
       # Syslog TCP
       # - 1514:1514
       # Syslog UDP
@@ -70,10 +69,20 @@ services:
       # - 12201:12201
       # GELF UDP
       - 12201:12201/udp
+    deploy:
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.graylog.entrypoints: ${ENTRYPOINT:-internal}
+        traefik.http.routers.graylog.rule: Host(`${DOMAIN:-graylog.localhost}`)
+        traefik.http.routers.graylog.service: graylog
+        traefik.http.services.graylog.loadbalancer.server.port: 9000
 
 networks:
   graylog:
     driver: overlay
+
+  public_network:
+    external: true
 
 # Volumes for persisting data, see https://docs.docker.com/engine/admin/volumes/volumes/
 volumes:
@@ -86,6 +95,7 @@ volumes:
       # device: ":${HOST_MONGO_DATA?Variable not set}"
       # type: nfs
       # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
   es_data:
     driver: local
     driver_opts:
@@ -95,6 +105,7 @@ volumes:
       # device: ":${HOST_ELASTICSEARCH_DATA?Variable not set}"
       # type: nfs
       # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
   graylog_data:
     driver: local
     driver_opts:

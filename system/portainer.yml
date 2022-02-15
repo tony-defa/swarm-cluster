@@ -42,8 +42,12 @@ services:
       placement:
         constraints: 
           - node.role == manager
-    ports:
-      - "8001:9000"
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.portainer.entrypoints: ${PORTAINER_ENTRYPOINT:-internal}
+        traefik.http.routers.portainer.rule: Host(`${PORTAINER_DOMAIN:-portainer.localhost}`)
+        traefik.http.routers.portainer.service: portainer
+        traefik.http.services.portainer.loadbalancer.server.port: 9000
 
 networks:
   public_network:

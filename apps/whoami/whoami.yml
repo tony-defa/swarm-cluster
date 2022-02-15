@@ -16,8 +16,8 @@ services:
       replicas: 3
       labels:
         traefik.enable: "true"
-        traefik.http.routers.whoami.entrypoints: web
-        traefik.http.routers.whoami.rule: Host(`${EXTERNAL_DOMAIN?Variable not set}`)
+        traefik.http.routers.whoami.entrypoints: ${ENTRYPOINT:-internal}
+        traefik.http.routers.whoami.rule: Host(`${DOMAIN:-whoami.localhost}`)
         traefik.http.routers.whoami.service: whoami
         traefik.http.services.whoami.loadbalancer.server.port: 80
 
