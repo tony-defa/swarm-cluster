@@ -57,7 +57,7 @@ services:
       - GRAYLOG_ELASTICSEARCH_VERSION=7
     networks:
       - graylog
-      - public_network
+      - proxy_network
     ports:
       # Graylog web interface and REST API
       # - 9000:9000
@@ -72,7 +72,7 @@ services:
     deploy:
       labels:
         traefik.enable: "true"
-        traefik.http.routers.graylog.entrypoints: ${ENTRYPOINT:-intsecure}
+        traefik.http.routers.graylog.entrypoints: ${ENTRYPOINT:-websecure}
         traefik.http.routers.graylog.rule: Host(`${DOMAIN:-graylog.localhost}`)
         traefik.http.routers.graylog.service: graylog
         traefik.http.services.graylog.loadbalancer.server.port: 9000
@@ -81,7 +81,7 @@ networks:
   graylog:
     driver: overlay
 
-  public_network:
+  proxy_network:
     external: true
 
 # Volumes for persisting data, see https://docs.docker.com/engine/admin/volumes/volumes/

@@ -15,7 +15,7 @@ services:
     <<: *default-opts
     image: wordpress:${WORDPRESS_TAG}
     networks:
-      - public_network
+      - proxy_network
       - wp_network
     volumes:
       - wordpress_data:/var/www/html
@@ -73,7 +73,7 @@ services:
         delay: 600s
 
 networks:
-  public_network:
+  proxy_network:
     external: true
     
   wp_network:

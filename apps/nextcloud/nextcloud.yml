@@ -22,7 +22,7 @@ services:
       - NEXTCLOUD_ADMIN_PASSWORD_FILE=/run/secrets/nextcloud_admin_password
     networks:
       - mariadb_network
-      - public_network
+      - proxy_network
     ports:
       - 9090:80
     deploy:
@@ -55,7 +55,7 @@ networks:
   mariadb_network:
     external: true
     
-  public_network:
+  proxy_network:
     external: true
 
 volumes:

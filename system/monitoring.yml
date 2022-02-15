@@ -18,7 +18,7 @@ services:
       - prometheus_data:/etc/prometheus
     networks:
       - metrics_network
-      - public_network
+      - proxy_network
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-lifecycle
@@ -27,7 +27,7 @@ services:
       replicas: 1
       labels:
         traefik.enable: "true"
-        traefik.http.routers.prometheus.entrypoints: ${PROMETHEUS_ENTRYPOINT:-intsecure}
+        traefik.http.routers.prometheus.entrypoints: ${PROMETHEUS_ENTRYPOINT:-websecure}
         traefik.http.routers.prometheus.rule: Host(`${PROMETHEUS_DOMAIN:-prometheus.localhost}`)
         traefik.http.routers.prometheus.service: prometheus
         traefik.http.services.prometheus.loadbalancer.server.port: 9090
@@ -39,13 +39,13 @@ services:
       - grafana_data:/var/lib/grafana
     networks:
       - metrics_network
-      - public_network
+      - proxy_network
     deploy:
       mode: replicated
       replicas: 1
       labels:
         traefik.enable: "true"
-        traefik.http.routers.grafana.entrypoints: ${GRAFANA_ENTRYPOINT:-intsecure}
+        traefik.http.routers.grafana.entrypoints: ${GRAFANA_ENTRYPOINT:-websecure}
         traefik.http.routers.grafana.rule: Host(`${GRAFANA_DOMAIN:-grafana.localhost}`)
         traefik.http.routers.grafana.service: grafana
         traefik.http.services.grafana.loadbalancer.server.port: 3000
@@ -57,7 +57,7 @@ services:
       - alertmanager_data:/etc/alertmanager
     networks:
       - metrics_network
-      - public_network
+      - proxy_network
     command:
       - --config.file=/etc/alertmanager/alertmanager.yml
     deploy:
@@ -65,7 +65,7 @@ services:
       replicas: 1
       labels:
         traefik.enable: "true"
-        traefik.http.routers.alertmanager.entrypoints: ${ALERTMANAGER_ENTRYPOINT:-intsecure}
+        traefik.http.routers.alertmanager.entrypoints: ${ALERTMANAGER_ENTRYPOINT:-websecure}
         traefik.http.routers.alertmanager.rule: Host(`${ALERTMANAGER_DOMAIN:-alertmanager.localhost}`)
         traefik.http.routers.alertmanager.service: alertmanager
         traefik.http.services.alertmanager.loadbalancer.server.port: 9093
@@ -99,7 +99,7 @@ networks:
   metrics_network:
     external: true
 
-  public_network:
+  proxy_network:
     external: true
 
 volumes:

@@ -10,13 +10,13 @@ services:
     <<: *default-opts
     image: "traefik/whoami"
     networks:
-      - public_network
+      - proxy_network
     deploy:
       mode: replicated
       replicas: 3
       labels:
         traefik.enable: "true"
-        traefik.http.routers.whoami.entrypoints: ${ENTRYPOINT:-intsecure}
+        traefik.http.routers.whoami.entrypoints: ${ENTRYPOINT:-websecure}
         traefik.http.routers.whoami.rule: Host(`${DOMAIN:-whoami.localhost}`)
         traefik.http.routers.whoami.service: whoami
         traefik.http.services.whoami.loadbalancer.server.port: 80
@@ -31,5 +31,5 @@ services:
         # traefik.http.middlewares.header-ratelimiter.ratelimit.sourcecriterion.requestheadername: HEADER-NAME
 
 networks:
-  public_network:
+  proxy_network:
     external: true

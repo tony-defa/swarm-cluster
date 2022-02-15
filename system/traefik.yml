@@ -28,48 +28,46 @@ services:
       - --providers.docker.swarmMode=true
       - --providers.docker.exposedByDefault=false
       - --providers.docker.swarmModeRefreshSeconds=15
-      - --providers.docker.network=public_network
+      - --providers.docker.network=proxy_network
       - --providers.docker.endpoint=unix:///var/run/docker.sock
 
       - --providers.file.watch=true
       - --providers.file.filename=/data/dynamic.yml
 
-      # Entry points configuration
-      ## web and websecure
-      - --entryPoints.web.address=:7080
-      ## https redirection and configuration
-      - --entryPoints.web.http.redirections.entryPoint.to=websecure
-      - --entryPoints.web.http.redirections.entryPoint.scheme=https
-      - --entryPoints.web.http.redirections.entrypoint.permanent=true
-
-      - --entryPoints.websecure.address=:7443
-      - --entryPoints.websecure.http.middlewares=secureHeaders@file
-
-      # Certificate configuration
-      # - --entryPoints.websecure.http.tls.certResolver=letsencrypt
+      # CertificateResolvers
+      ## LetsEncrypt
       # - --certificatesResolvers.letsencrypt.acme.email=${LE_ACME_EMAIL?Variable not set}
       # - --certificatesResolvers.letsencrypt.acme.storage=/data/acme.json
       # - --certificatesResolvers.letsencrypt.acme.keyType=EC384
       # - --certificatesResolvers.letsencrypt.acme.httpChallenge.entryPoint=web
 
-      ## int and intsecure
-      - --entryPoints.int.address=:80
-      ## https redirection and configuration
-      - --entryPoints.int.http.redirections.entryPoint.to=intsecure
-      - --entryPoints.int.http.redirections.entryPoint.scheme=https
-      - --entryPoints.int.http.redirections.entrypoint.permanent=true
-
-      - --entryPoints.intsecure.address=:443
-      - --entryPoints.intsecure.http.middlewares=secureHeaders@file
-
-      # Certificate configuration
-      # - --entryPoints.intsecure.http.tls.certResolver=linode-dnschallenge
-      # - --entryPoints.intsecure.http.tls.domains[0].main=${INTERNAL_DOMAIN?Variable not set}
-      # - --entryPoints.intsecure.http.tls.domains[0].sans=*.${INTERNAL_DOMAIN?Variable not set}
+      ## DNS Challenge (Linode)
       # - --certificatesResolvers.linode-dnschallenge.acme.dnschallenge=true
       # - --certificatesResolvers.linode-dnschallenge.acme.dnschallenge.provider=linode
       # - --certificatesResolvers.linode-dnschallenge.acme.email=${DNS_ACME_EMAIL?Variable not set}
       # - --certificatesResolvers.linode-dnschallenge.acme.storage=/data/acme.json
+
+      # Entry points configuration
+      ## web and websecure
+      - --entryPoints.web.address=:80
+      ## https redirection and configuration
+      - --entryPoints.web.http.redirections.entryPoint.to=websecure
+      - --entryPoints.web.http.redirections.entryPoint.scheme=https
+      - --entryPoints.web.http.redirections.entrypoint.permanent=true
+
+      - --entryPoints.websecure.address=:443
+      - --entryPoints.websecure.http.middlewares=secureHeaders@file
+
+      # Certificate configuration
+      ## LetsEncrypt
+      # - --entryPoints.websecure.http.tls.certResolver=letsencrypt
+
+      ## DNS Challenge (Linode)
+      # - --entryPoints.websecure.http.tls.certResolver=linode-dnschallenge
+      # - --entryPoints.websecure.http.tls.domains[0].main=${EXTERNAL_DOMAIN?Variable not set}
+      # - --entryPoints.websecure.http.tls.domains[0].sans=*.${EXTERNAL_DOMAIN?Variable not set}
+      # - --entryPoints.websecure.http.tls.domains[1].main=${INTERNAL_DOMAIN?Variable not set}
+      # - --entryPoints.websecure.http.tls.domains[1].sans=*.${INTERNAL_DOMAIN?Variable not set}
 
       # Prometheus configuration
       - --metrics.prometheus=true
@@ -82,7 +80,7 @@ services:
     # environment:
     #   - LINODE_TOKEN_FILE=/run/secrets/linode_dns_token
     networks:
-      - public_network
+      - proxy_network
       - metrics_network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -91,8 +89,6 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "7080:7080"
-      - "7443:7443"
     deploy:
       placement:
         constraints: 
@@ -103,13 +99,13 @@ services:
         parallelism: 1
       labels:
         traefik.enable: "true"
-        traefik.http.routers.traefik.entrypoints: ${TRAEFIK_ENTRYPOINT:-intsecure}
+        traefik.http.routers.traefik.entrypoints: ${TRAEFIK_ENTRYPOINT:-websecure}
         traefik.http.routers.traefik.rule: Host(`${TRAEFIK_DOMAIN:-traefik.localhost}`)
         traefik.http.routers.traefik.service: traefik
         traefik.http.services.traefik.loadbalancer.server.port: 8080
 
 networks:
-  public_network:
+  proxy_network:
     external: true
 
   metrics_network:

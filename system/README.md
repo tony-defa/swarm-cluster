@@ -70,7 +70,7 @@ Create a overlay network for the metrics collection and one for the proxy (traef
 
 ```sh
 $ docker network create -d overlay metrics_network
-$ docker network create -d overlay public_network
+$ docker network create -d overlay proxy_network
 ```
 
 ## Other notes

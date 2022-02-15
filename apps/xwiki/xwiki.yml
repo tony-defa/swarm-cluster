@@ -23,7 +23,7 @@ services:
       - DB_PASSWORD_FILE=/run/secrets/mariadb_db_password
       - DB_DATABASE_FILE=/run/secrets/mariadb_db_database
     networks:
-      - public_network
+      - proxy_network
       - mariadb_network
     deploy:
       replicas: 1
@@ -31,7 +31,7 @@ services:
         condition: on-failure
       labels:
         traefik.enable: "true"
-        traefik.http.routers.xwiki.entrypoints: ${ENTRYPOINT:-intsecure}
+        traefik.http.routers.xwiki.entrypoints: ${ENTRYPOINT:-websecure}
         traefik.http.routers.xwiki.rule: Host(`${DOMAIN:-xwiki.localhost}`)
         traefik.http.routers.xwiki.service: xwiki
         traefik.http.services.xwiki.loadbalancer.server.port: 8080
@@ -45,7 +45,7 @@ secrets:
     external: true
       
 networks:
-  public_network:
+  proxy_network:
     external: true
 
   mariadb_network:
