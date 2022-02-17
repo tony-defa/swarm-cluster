@@ -1,13 +1,22 @@
 version: '3.9'
+
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://127.0.0.1:12201"
  
 services:
   nextcloud:
-    image: nextcloud
-    env_file: .env
+    <<: *default-opts
+    image: nextcloud:${NEXTCLOUD_TAG}
     volumes:
-      - nextcloud_data:/var/www/html/data
-      - nextcloud_apps:/var/www/html/custom_apps
-      - nextcloud_config:/var/www/html/config
+      - nextcloud_storage:/var/www/html/data
+      - nextcloud_data:/var/www/html
     secrets:
       - nextcloud_admin_user
       - nextcloud_admin_password
@@ -66,16 +75,9 @@ volumes:
       type: none
       o: bind
 
-  nextcloud_apps:
+  nextcloud_storage:
     driver: local
     driver_opts:
-      device: ${HOST_NEXTCLOUD_APPS}
-      type: none
-      o: bind
-
-  nextcloud_config:
-    driver: local
-    driver_opts:
-      device: ${HOST_NEXTCLOUD_CONFIG}
+      device: ${HOST_NEXTCLOUD_STORAGE}
       type: none
       o: bind
