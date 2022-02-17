@@ -51,9 +51,9 @@ services:
       ## web and websecure
       - --entryPoints.web.address=:80
       ## https redirection and configuration
-      - --entryPoints.web.http.redirections.entryPoint.to=websecure
-      - --entryPoints.web.http.redirections.entryPoint.scheme=https
-      - --entryPoints.web.http.redirections.entrypoint.permanent=true
+      # - --entryPoints.web.http.redirections.entryPoint.to=websecure
+      # - --entryPoints.web.http.redirections.entryPoint.scheme=https
+      # - --entryPoints.web.http.redirections.entrypoint.permanent=true
 
       - --entryPoints.websecure.address=:443
       - --entryPoints.websecure.http.middlewares=secureHeaders@file
