@@ -38,8 +38,8 @@ services:
         if [[ ! -f "$$hdb" || ! -f "$$hdb_config" ]]; then
           echo "Installing HyperDB..." 
 
-          curl -s https://raw.githubusercontent.com/Automattic/HyperDB/trunk/db.php --output $$hdb;
-          curl -s https://raw.githubusercontent.com/Automattic/HyperDB/trunk/db-config.php --output $$hdb_config;
+          curl -s http://plugins.svn.wordpress.org/hyperdb/tags/${HYPERDB_VERSION}/db.php --output $$hdb;
+          curl -s http://plugins.svn.wordpress.org/hyperdb/tags/${HYPERDB_VERSION}/db-config.php --output $$hdb_config;
           sed -i '/Sample Configuration 1/,/Sample Configuration 2/{/Sample Configuration 2/!d}' $$hdb_config;
           
           cat << EOF >> $$hdb_config
