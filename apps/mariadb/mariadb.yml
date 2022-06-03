@@ -2,7 +2,7 @@ version: '3.8'
  
 services:
   db:
-    image: mariadb
+    image: mariadb:${MARIADB_TAG}
     volumes:
       - mariadb_data:/var/lib/mysql
     secrets:
