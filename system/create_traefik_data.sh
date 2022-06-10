@@ -16,7 +16,6 @@ http:
   middlewares:
     secureHeaders:
       headers:
-        sslRedirect: true
         forceSTSHeader: true
         stsIncludeSubdomains: true
         stsPreload: true
