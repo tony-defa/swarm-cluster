@@ -44,8 +44,14 @@ services:
       ## DNS Challenge (Linode)
       # - --certificatesResolvers.linode-dnschallenge.acme.dnschallenge=true
       # - --certificatesResolvers.linode-dnschallenge.acme.dnschallenge.provider=linode
-      # - --certificatesResolvers.linode-dnschallenge.acme.email=${DNS_ACME_EMAIL?Variable not set}
+      # - --certificatesResolvers.linode-dnschallenge.acme.email=${LE_ACME_EMAIL?Variable not set}
       # - --certificatesResolvers.linode-dnschallenge.acme.storage=/data/acme.json
+
+      ## DNS Challenge (all-inkl)
+      # - --certificatesResolvers.allinkl-dnschallenge.acme.dnschallenge=true
+      # - --certificatesResolvers.allinkl-dnschallenge.acme.dnschallenge.provider=allinkl
+      # - --certificatesResolvers.allinkl-dnschallenge.acme.email=${LE_ACME_EMAIL?Variable not set}
+      # - --certificatesResolvers.allinkl-dnschallenge.acme.storage=/data/acme.json
 
       # Entry points configuration
       ## web and websecure
@@ -55,8 +61,8 @@ services:
       # - --entryPoints.web.http.redirections.entryPoint.scheme=https
       # - --entryPoints.web.http.redirections.entrypoint.permanent=true
 
-      - --entryPoints.websecure.address=:443
-      - --entryPoints.websecure.http.middlewares=secureHeaders@file
+      # - --entryPoints.websecure.address=:443
+      # - --entryPoints.websecure.http.middlewares=secureHeaders@file
 
       # Certificate configuration
       ## LetsEncrypt
@@ -69,16 +75,34 @@ services:
       # - --entryPoints.websecure.http.tls.domains[1].main=${INTERNAL_DOMAIN?Variable not set}
       # - --entryPoints.websecure.http.tls.domains[1].sans=*.${INTERNAL_DOMAIN?Variable not set}
 
+      ## DNS Challenge (allinkl)
+      # - --entryPoints.websecure.http.tls.certResolver=allinkl-dnschallenge
+      # - --entryPoints.websecure.http.tls.domains[0].main=${EXTERNAL_DOMAIN?Variable not set}
+      # - --entryPoints.websecure.http.tls.domains[0].sans=*.${EXTERNAL_DOMAIN?Variable not set}
+      # - --entryPoints.websecure.http.tls.domains[1].main=${INTERNAL_DOMAIN?Variable not set}
+      # - --entryPoints.websecure.http.tls.domains[1].sans=*.${INTERNAL_DOMAIN?Variable not set}
+
       # Prometheus configuration
       - --metrics.prometheus=true
       - --metrics.prometheus.addEntryPointsLabels=true
       - --metrics.prometheus.addServicesLabels=true
       - --metrics.prometheus.entryPoint=metrics
       - --entryPoints.metrics.address=:8082
+
+    ## Linode secrets
     # secrets:
     #   - linode_dns_token
     # environment:
     #   - LINODE_TOKEN_FILE=/run/secrets/linode_dns_token
+
+    ## all-inkl secrets
+    # secrets:
+    #   - all_inkl_login
+    #   - all_inkl_password
+    # environment:
+    #   - ALL_INKL_LOGIN_FILE=/run/secrets/all_inkl_login
+    #   - ALL_INKL_PASSWORD_FILE=/run/secrets/all_inkl_password
+    
     networks:
       - proxy_network
       - metrics_network
@@ -111,8 +135,16 @@ networks:
   metrics_network:
     external: true
 
+## Linode secrets
 # secrets:
 #   linode_dns_token:
+#     external: true
+
+## all-inkl secrets
+# secrets:
+#   all_inkl_login:
+#     external: true
+#   all_inkl_password:
 #     external: true
 
 volumes:
