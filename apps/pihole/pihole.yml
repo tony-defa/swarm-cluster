@@ -66,5 +66,10 @@ volumes:
 
 networks:
   pihole:
+    driver: overlay
+    ipam:
+      config:
+      - subnet: ${PIHOLE_NETWORK_SUBNET}
+      
   proxy_network:
     external: true
