@@ -71,7 +71,7 @@ services:
         traefik.http.services.alertmanager.loadbalancer.server.port: 9093
 
   node-exporter:
-    image: prom/node-exporter:v1.3.1
+    image: prom/node-exporter:${NODE_EXPORTER_TAG}
     networks:
       - metrics_network
     environment:
