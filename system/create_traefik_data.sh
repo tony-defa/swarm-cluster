@@ -21,7 +21,7 @@ http:
         stsPreload: true
         stsSeconds: 31536000
 
-    user-auth:
+    basic-auth:
       basicAuth:
         usersFile: "/data/users.txt"
 

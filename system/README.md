@@ -60,7 +60,7 @@ $ htpasswd -nb <user> <password> | sudo tee "$(cat .env | grep "HOST_TRAEFIK_PAT
 > Replace the `<user>` and `<password>`placeholders.
 > Use `sudo` command as explained above.
 
-It is now possible to add the `user-auth` middleware as a service label [see here](#traefik). This will make sure that a route is only available after valid credentials have been provided.
+It is now possible to add the `basic-auth` middleware as a service label [see here](#traefik). This will make sure that a route is only available after valid credentials have been provided.
 
 ### Create docker secrets
 No docker secrets are required.
@@ -98,7 +98,7 @@ service-name:
       traefik.http.services.<service-name>.loadBalancer.sticky.cookie.name: "<random-string>"
 
       # Optional basic auth 
-      traefik.http.routers.<router-name>.middlewares: user-auth@file
+      traefik.http.routers.<router-name>.middlewares: basic-auth@file
   ...
 ```
 > Replace the `<annotations>` with correct values.
