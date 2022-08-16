@@ -48,6 +48,12 @@ $ sudo ./create_alertmanager_data.sh
 This script works the same as the one for prometheus. See [Prometheus configuration](#prometheus-configuration)
 
 #### Traefik configuration
+> It is recommended to copy the original `traefik.yml` to a named `<name>-traefik.yml` version.
+> ```sh
+> $ cp traefik.yml customname-traefik.yml
+> ```
+> The service as it is only contains proxying via http. For any other feature the service commands should be modified. 
+
 For traefik to work properly some configuration steps are necessary. Run the following commands to complete this step:
 
 ```sh
@@ -68,6 +74,8 @@ It is now possible to add the `basic-auth` middleware as a service label [see he
 
 ### Create docker secrets
 No docker secrets are required.
+
+> Depending on your custom traefik commands and configuration some secrets might me necessary.
 
 ### Create network
 Create a overlay network for the metrics collection and one for the proxy (traefik).
