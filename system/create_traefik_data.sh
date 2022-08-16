@@ -1,41 +1,29 @@
 #!/bin/bash
 
+CONFIG_FOLDER=traefik
+CONFIG_FILES=("dynamic.yml")
+
 DATA_PATH=$(cat .env | grep "HOST_TRAEFIK_PATH" | cut -d'=' -f2)
 
 mkdir -p $DATA_PATH
 
-touch "${DATA_PATH}/users.txt"
-touch "${DATA_PATH}/acme.json"
+for FILE in ${CONFIG_FILES[@]}; do
+    if [ ! -f "./config/$CONFIG_FOLDER/$FILE" ]; then
+        cp ./config/$CONFIG_FOLDER/example.$FILE ./config/$CONFIG_FOLDER/$FILE
+    fi
 
-chmod 600 "${DATA_PATH}/users.txt"
-chmod 600 "${DATA_PATH}/acme.json"
+    cp ./config/$CONFIG_FOLDER/$FILE $DATA_PATH/$FILE
+done
 
-tee -a "${DATA_PATH}/dynamic.yml" > /dev/null <<EOF
-# Dynamic configuration
-http:
-  middlewares:
-    secureHeaders:
-      headers:
-        forceSTSHeader: true
-        stsIncludeSubdomains: true
-        stsPreload: true
-        stsSeconds: 31536000
+SECRETS_FILES=("users.txt" "acme.json")
 
-    basic-auth:
-      basicAuth:
-        usersFile: "/data/users.txt"
-
-tls:
-  options:
-    default:
-      cipherSuites:
-        - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
-        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
-        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-        - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
-      minVersion: VersionTLS12
-EOF
+for FILE in ${SECRETS_FILES[@]}; do
+	if [ ! -f "$DATA_PATH/$FILE" ]; then
+		touch $DATA_PATH/$FILE
+		chmod 600 $DATA_PATH/$FILE
+	else
+		echo "$FILE file already exists and could contain sensitive data. Modify '$DATA_PATH/$FILE' at your own risk."
+	fi
+done
 
 chown -R :docker $DATA_PATH

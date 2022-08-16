@@ -34,22 +34,32 @@ A centralized storage solution is required for the following stacks:
 ### Create pre-configured data folder
 A configuration is required for prometheus to scrape data from other targets. Run the following commands to complete this step:
 
+A few notes first:
+> Use the `sudo` command, if the path of the configured `HOST_TRAEFIK_DATA`, `HOST_PROMETHEUS_DATA` and/or `HOST_ALERTMANAGER_DATA` variable does not reside in your home directory. Omit `sudo` otherwise.
+> For NFS configuration: Edit the script at the end and use `nobody:nogroup` as owner for the created directory with the `chown` command.
+
+#### Prometheus configuration
 ```sh
 $ chmod +x ./create_prometheus_data.sh
 $ sudo ./create_prometheus_data.sh
 ```
 
-After executing the script, the config files will be placed in the `HOST_PROMETHEUS_DATA` directory and can be edited to fit your needs.
+Basic config files will be placed in the `HOST_PROMETHEUS_DATA` directory and in the `./config/prometheus` directory. The later can be edited to fit your needs. Re-Execute the script above to copy the config files to the `HOST_PROMETHEUS_DATA` directory and apply your changes.
 
+#### Alertmanager configuration
+```sh
+$ chmod +x ./create_alertmanager_data.sh
+$ sudo ./create_alertmanager_data.sh
+```
+This script works the same as the one for prometheus. See [Prometheus configuration](#prometheus-configuration)
+
+#### Traefik configuration
 For traefik to work properly some configuration steps are necessary. Run the following commands to complete this step:
 
 ```sh
 $ chmod +x ./create_traefik_data.sh
 $ sudo ./create_traefik_data.sh
 ```
-
-> Use the `sudo` command, if the path of the configured `HOST_TRAEFIK_DATA` and/or `HOST_PROMETHEUS_DATA` variable does not reside in your home directory. Omit `sudo` otherwise.
-> For NFS configuration: Edit the script at the end and use `nobody:nogroup` as owner for the created directory with the `chown` command.
 
 To create a basic auth account use the following commands (optional)
 
