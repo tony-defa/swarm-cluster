@@ -1,0 +1,37 @@
+version: '3.8'
+
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://127.0.0.1:12201"
+
+services:
+  oauth:
+    image: thomseddon/traefik-forward-auth:${FORWARD_AUTH_TAG}
+    command:
+      - --match-whitelist-or-domain
+
+      ## Example rule
+      #- --rule.allowExternal.action=allow
+      #- --rule.allowExternal.rule=HostRegexp(`{subdomain:[a-z0-9]+}.localhost`)
+    networks:
+      - proxy_network
+    deploy:
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.oauth.entrypoints: ${FORWARD_AUTH_ENTRYPOINT:-websecure}
+        traefik.http.routers.oauth.rule: Host(`${FORWARD_AUTH_DOMAIN:-auth.localhost}`)
+        traefik.http.routers.oauth.service: oauth
+        traefik.http.services.oauth.loadbalancer.server.port: 4181
+
+        traefik.http.middlewares.oauth.forwardauth.address: http://oauth:4181
+        traefik.http.middlewares.oauth.forwardauth.authResponseHeaders: X-Forwarded-User
+
+networks:
+  proxy_network:
+    external: true
