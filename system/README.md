@@ -6,29 +6,23 @@ Grafana is a multi-platform open source analytics and interactive visualization 
 
 Traefik is an open-source Edge Router that makes publishing your services a fun and easy experience. It receives requests on behalf of your system and finds out which components are responsible for handling them.
 
-Portainer enables centralized configuration, management and security of Kubernetes and Docker environments, allowing you to deliver ‘Containers-as-a-Service’ to your users quickly, easily and securely.
-
 ### `monitoring.yml`
 Contains monitoring services like prometheus, grafana, etc.
 
 ### `traefik.yml`
 Contains traefik configured for execution with docker swarm.
 
-### `portainer.yml`
-Contains portainer itself and the agent that runs on every node.
-
 ## Perquisites
 ### Storage
 A centralized storage solution is required for the following stacks:
 - `monitoring.yml`
 - `traefik.yml`
-- `portainer.yml`
 
 ### Service dependencies
 `traefik.yml` requires the following network to exist (see [this](#create-network) section):
 - `metrics_network`
 
-`monitoring.yml` and `portainer.yml` require the following stack to run:
+`monitoring.yml` requires the following stack to run:
 - `traefik.yml`
 
 ### Create pre-configured data folder
