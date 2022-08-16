@@ -32,8 +32,6 @@ services:
     networks:
       - mariadb_network
       - proxy_network
-    ports:
-      - 9090:80
     deploy:
       replicas: 1
       update_config:
