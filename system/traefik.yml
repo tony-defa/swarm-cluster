@@ -34,25 +34,6 @@ services:
       - --providers.file.watch=true
       - --providers.file.filename=/data/dynamic.yml
 
-      # CertificateResolvers
-      ## LetsEncrypt
-      # - --certificatesResolvers.letsencrypt.acme.email=${LE_ACME_EMAIL?Variable not set}
-      # - --certificatesResolvers.letsencrypt.acme.storage=/data/acme.json
-      # - --certificatesResolvers.letsencrypt.acme.keyType=EC384
-      # - --certificatesResolvers.letsencrypt.acme.httpChallenge.entryPoint=web
-
-      ## DNS Challenge (Linode)
-      # - --certificatesResolvers.linode-dnschallenge.acme.dnschallenge=true
-      # - --certificatesResolvers.linode-dnschallenge.acme.dnschallenge.provider=linode
-      # - --certificatesResolvers.linode-dnschallenge.acme.email=${LE_ACME_EMAIL?Variable not set}
-      # - --certificatesResolvers.linode-dnschallenge.acme.storage=/data/acme.json
-
-      ## DNS Challenge (all-inkl)
-      # - --certificatesResolvers.allinkl-dnschallenge.acme.dnschallenge=true
-      # - --certificatesResolvers.allinkl-dnschallenge.acme.dnschallenge.provider=allinkl
-      # - --certificatesResolvers.allinkl-dnschallenge.acme.email=${LE_ACME_EMAIL?Variable not set}
-      # - --certificatesResolvers.allinkl-dnschallenge.acme.storage=/data/acme.json
-
       # Entry points configuration
       ## web and websecure
       - --entryPoints.web.address=:80
@@ -67,6 +48,10 @@ services:
       # Certificate configuration
       ## LetsEncrypt
       # - --entryPoints.websecure.http.tls.certResolver=letsencrypt
+      # - --certificatesResolvers.letsencrypt.acme.email=${LE_ACME_EMAIL?Variable not set}
+      # - --certificatesResolvers.letsencrypt.acme.storage=/data/acme.json
+      # - --certificatesResolvers.letsencrypt.acme.keyType=EC384
+      # - --certificatesResolvers.letsencrypt.acme.httpChallenge.entryPoint=web
 
       ## DNS Challenge (Linode)
       # - --entryPoints.websecure.http.tls.certResolver=linode-dnschallenge
@@ -74,6 +59,10 @@ services:
       # - --entryPoints.websecure.http.tls.domains[0].sans=*.${EXTERNAL_DOMAIN?Variable not set}
       # - --entryPoints.websecure.http.tls.domains[1].main=${INTERNAL_DOMAIN?Variable not set}
       # - --entryPoints.websecure.http.tls.domains[1].sans=*.${INTERNAL_DOMAIN?Variable not set}
+      # - --certificatesResolvers.linode-dnschallenge.acme.dnschallenge=true
+      # - --certificatesResolvers.linode-dnschallenge.acme.dnschallenge.provider=linode
+      # - --certificatesResolvers.linode-dnschallenge.acme.email=${LE_ACME_EMAIL?Variable not set}
+      # - --certificatesResolvers.linode-dnschallenge.acme.storage=/data/acme.json
 
       ## DNS Challenge (allinkl)
       # - --entryPoints.websecure.http.tls.certResolver=allinkl-dnschallenge
@@ -81,6 +70,10 @@ services:
       # - --entryPoints.websecure.http.tls.domains[0].sans=*.${EXTERNAL_DOMAIN?Variable not set}
       # - --entryPoints.websecure.http.tls.domains[1].main=${INTERNAL_DOMAIN?Variable not set}
       # - --entryPoints.websecure.http.tls.domains[1].sans=*.${INTERNAL_DOMAIN?Variable not set}
+      # - --certificatesResolvers.allinkl-dnschallenge.acme.dnschallenge=true
+      # - --certificatesResolvers.allinkl-dnschallenge.acme.dnschallenge.provider=allinkl
+      # - --certificatesResolvers.allinkl-dnschallenge.acme.email=${LE_ACME_EMAIL?Variable not set}
+      # - --certificatesResolvers.allinkl-dnschallenge.acme.storage=/data/acme.json
 
       # Prometheus configuration
       - --metrics.prometheus=true
