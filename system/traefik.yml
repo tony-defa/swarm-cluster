@@ -43,7 +43,7 @@ services:
       # - --entryPoints.web.http.redirections.entrypoint.permanent=true
 
       # - --entryPoints.websecure.address=:443
-      # - --entryPoints.websecure.http.middlewares=secureHeaders@file
+      # - --entryPoints.websecure.http.middlewares=websecure-entrypoint-chain@file
 
       # Certificate configuration
       ## LetsEncrypt

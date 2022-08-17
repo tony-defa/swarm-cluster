@@ -1,5 +1,10 @@
 http:
   middlewares:
+    websecure-entrypoint-chain:
+      chain:
+        middlewares:
+          - secureHeaders@file
+
     secureHeaders:
       headers:
         forceSTSHeader: true
