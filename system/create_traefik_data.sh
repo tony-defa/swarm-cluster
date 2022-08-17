@@ -1,18 +1,18 @@
 #!/bin/bash
 
 CONFIG_FOLDER=traefik
-CONFIG_FILES=("dynamic.yml")
+CONFIG_FILES=("http.yml" "tls.yml")
 
 DATA_PATH=$(cat .env | grep "HOST_TRAEFIK_PATH" | cut -d'=' -f2)
 
-mkdir -p $DATA_PATH
+mkdir -p $DATA_PATH/dynamic
 
 for FILE in ${CONFIG_FILES[@]}; do
     if [ ! -f "./config/$CONFIG_FOLDER/$FILE" ]; then
         cp ./config/$CONFIG_FOLDER/example.$FILE ./config/$CONFIG_FOLDER/$FILE
     fi
 
-    cp ./config/$CONFIG_FOLDER/$FILE $DATA_PATH/$FILE
+    cp ./config/$CONFIG_FOLDER/$FILE $DATA_PATH/dynamic/$FILE
 done
 
 SECRETS_FILES=("users.txt" "acme.json")

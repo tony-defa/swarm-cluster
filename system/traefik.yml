@@ -32,7 +32,7 @@ services:
       - --providers.docker.endpoint=unix:///var/run/docker.sock
 
       - --providers.file.watch=true
-      - --providers.file.filename=/data/dynamic.yml
+      - --providers.file.directory=/data/dynamic/
 
       # Entry points configuration
       ## web and websecure
