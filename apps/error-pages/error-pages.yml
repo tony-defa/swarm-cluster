@@ -15,7 +15,7 @@ services:
       - proxy_network
     deploy:
       labels:
-        traefik.enable: true
+        traefik.enable: "true"
         traefik.http.routers.error-pages-router.priority: 10
         traefik.http.routers.error-pages-router.entrypoints: ${ENTRYPOINT:-websecure}
         traefik.http.routers.error-pages-router.rule: HostRegexp(`{host:.+}`)
