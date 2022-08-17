@@ -12,6 +12,7 @@ x-default-opts: &default-opts
 
 services:
   oauth:
+    <<: *default-opts
     image: thomseddon/traefik-forward-auth:${FORWARD_AUTH_TAG}
     command:
       - --match-whitelist-or-domain
