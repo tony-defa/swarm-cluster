@@ -23,4 +23,16 @@ No docker secrets are required.
 No network needs to be created.
 
 ## Other notes
-No notes
+The error pages are automatically shown for each caught router rule that does not point to an existing service.
+
+Additionally you can add the middleware to an entrypoint, so that all services will show the error pages, when an erroneous status code is returned.
+```sh
+--entryPoints.<entrypoint-name>.http.middlewares=error-pages-middleware@docker
+```
+
+or configure single services that need to use this middleware by adding the following label
+```yml
+traefik.http.routers.<router-name>.middlewares: error-pages-middleware@docker
+```
+
+> Replace the `<annotations>` with correct values.
