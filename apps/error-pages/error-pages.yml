@@ -1,6 +1,8 @@
 version: '3.8'
 
 x-default-opts: &default-opts
+  env_file:
+    .env
   logging:
     options:
       max-size: "1m"
@@ -9,8 +11,6 @@ services:
   error-pages:
     <<: *default-opts
     image: tarampampam/error-pages:${TAG}
-    environment:
-      TEMPLATE_NAME: l7-dark
     networks:
       - proxy_network
     deploy:
