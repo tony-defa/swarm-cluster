@@ -15,7 +15,7 @@ services:
     networks:
       - proxy_network
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - jenkins_data:/var/jenkins_home
     deploy:
       mode: replicated
