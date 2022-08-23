@@ -27,6 +27,8 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+      restart_policy:
+        condition: on-failure
       labels:
         traefik.enable: "true"
         traefik.http.routers.wordpress.entrypoints: ${ENTRYPOINT:-websecure}
@@ -48,6 +50,8 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+      restart_policy:
+        condition: on-failure
 
   wordpress-backup:
     <<: *default-opts
@@ -70,6 +74,7 @@ services:
       - wp_network
     deploy:
       restart_policy:
+        condition: on-failure
         delay: 600s
 
 networks:

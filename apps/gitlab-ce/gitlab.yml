@@ -21,6 +21,8 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+      restart_policy:
+        condition: on-failure
       labels:
         traefik.enable: "true"
         traefik.http.routers.gitlab.entrypoints: ${ENTRYPOINT:-websecure}

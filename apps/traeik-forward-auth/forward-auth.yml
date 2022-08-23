@@ -23,6 +23,8 @@ services:
     networks:
       - proxy_network
     deploy:
+      restart_policy:
+        condition: on-failure
       labels:
         traefik.enable: "true"
         traefik.http.routers.oauth.entrypoints: ${FORWARD_AUTH_ENTRYPOINT:-websecure}

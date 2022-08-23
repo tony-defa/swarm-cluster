@@ -19,6 +19,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     deploy:
       mode: global
+      restart_policy:
+        condition: on-failure
 
   container-prune:
     <<: *default-opts
@@ -30,6 +32,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     deploy:
       mode: global
+      restart_policy:
+        condition: on-failure
 
 networks:
   bridge:
