@@ -48,8 +48,8 @@ services:
           - node.role == manager
       labels:
         traefik.enable: "true"
-        traefik.http.routers.portainer.entrypoints: ${PORTAINER_ENTRYPOINT:-websecure}
-        traefik.http.routers.portainer.rule: Host(`${PORTAINER_DOMAIN:-portainer.localhost}`)
+        traefik.http.routers.portainer.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.portainer.rule: Host(`${DOMAIN:-portainer.localhost}`)
         traefik.http.routers.portainer.service: portainer
         traefik.http.services.portainer.loadbalancer.server.port: 9000
 
