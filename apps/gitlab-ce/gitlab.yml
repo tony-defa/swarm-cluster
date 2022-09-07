@@ -1,7 +1,18 @@
 version: "3.9"
 
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://127.0.0.1:12201"
+
 services:
   gitlab:
+    <<: *default-opts
     image: gitlab/gitlab-ce:${GITLAB_TAG}
     networks:
       - gitlab_network
