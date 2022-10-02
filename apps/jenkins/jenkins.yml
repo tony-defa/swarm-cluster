@@ -15,11 +15,13 @@ services:
     networks:
       - proxy_network
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - jenkins_data:/var/jenkins_home
     deploy:
       mode: replicated
       replicas: 1
+      restart_policy:
+        condition: on-failure
       labels:
         traefik.enable: "true"
         traefik.http.routers.jenkins.entrypoints: ${ENTRYPOINT:-websecure}

@@ -27,6 +27,8 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+      restart_policy:
+        condition: on-failure
       labels:
         traefik.enable: "true"
         traefik.http.routers.wordpress.entrypoints: ${ENTRYPOINT:-websecure}
@@ -48,6 +50,8 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+      restart_policy:
+        condition: on-failure
 
   wordpress-backup:
     <<: *default-opts
@@ -62,6 +66,7 @@ services:
           mkdir -p $$backup_dir/data;
           /usr/bin/mysqldump -u $$DB_USER --password=$$DB_PASSWORD --host=wordpress-db --databases $$DB_NAME --no-tablespaces > $$backup_dir/db.sql;
           cp -r /data/* $$backup_dir/data/.;
+          find /backup/wordpress_* -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
         done
     volumes:
       - wordpress_backup:/backup
@@ -70,6 +75,7 @@ services:
       - wp_network
     deploy:
       restart_policy:
+        condition: on-failure
         delay: 600s
 
 networks:

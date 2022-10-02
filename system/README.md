@@ -6,40 +6,53 @@ Grafana is a multi-platform open source analytics and interactive visualization 
 
 Traefik is an open-source Edge Router that makes publishing your services a fun and easy experience. It receives requests on behalf of your system and finds out which components are responsible for handling them.
 
-Portainer enables centralized configuration, management and security of Kubernetes and Docker environments, allowing you to deliver ‘Containers-as-a-Service’ to your users quickly, easily and securely.
-
 ### `monitoring.yml`
 Contains monitoring services like prometheus, grafana, etc.
 
 ### `traefik.yml`
 Contains traefik configured for execution with docker swarm.
 
-### `portainer.yml`
-Contains portainer itself and the agent that runs on every node.
-
 ## Perquisites
 ### Storage
 A centralized storage solution is required for the following stacks:
 - `monitoring.yml`
 - `traefik.yml`
-- `portainer.yml`
 
 ### Service dependencies
 `traefik.yml` requires the following network to exist (see [this](#create-network) section):
 - `metrics_network`
 
-`monitoring.yml` and `portainer.yml` require the following stack to run:
+`monitoring.yml` requires the following stack to run:
 - `traefik.yml`
 
 ### Create pre-configured data folder
 A configuration is required for prometheus to scrape data from other targets. Run the following commands to complete this step:
 
+A few notes first:
+> Use the `sudo` command, if the path of the configured `HOST_TRAEFIK_DATA`, `HOST_PROMETHEUS_DATA` and/or `HOST_ALERTMANAGER_DATA` variable does not reside in your home directory. Omit `sudo` otherwise.
+> For NFS configuration: Edit the script at the end and use `nobody:nogroup` as owner for the created directory with the `chown` command.
+
+#### Prometheus configuration
 ```sh
 $ chmod +x ./create_prometheus_data.sh
 $ sudo ./create_prometheus_data.sh
 ```
 
-After executing the script, the config files will be placed in the `HOST_PROMETHEUS_DATA` directory and can be edited to fit your needs.
+Basic config files will be placed in the `HOST_PROMETHEUS_DATA` directory and in the `./config/prometheus` directory. The later can be edited to fit your needs. Re-Execute the script above to copy the config files to the `HOST_PROMETHEUS_DATA` directory and apply your changes.
+
+#### Alertmanager configuration
+```sh
+$ chmod +x ./create_alertmanager_data.sh
+$ sudo ./create_alertmanager_data.sh
+```
+This script works the same as the one for prometheus. See [Prometheus configuration](#prometheus-configuration)
+
+#### Traefik configuration
+> It is recommended to copy the original `traefik.yml` to a named `<name>-traefik.yml` version.
+> ```sh
+> $ cp traefik.yml customname-traefik.yml
+> ```
+> The service as it is only contains proxying via http. For any other feature the service commands should be modified. 
 
 For traefik to work properly some configuration steps are necessary. Run the following commands to complete this step:
 
@@ -47,9 +60,6 @@ For traefik to work properly some configuration steps are necessary. Run the fol
 $ chmod +x ./create_traefik_data.sh
 $ sudo ./create_traefik_data.sh
 ```
-
-> Use the `sudo` command, if the path of the configured `HOST_TRAEFIK_DATA` and/or `HOST_PROMETHEUS_DATA` variable does not reside in your home directory. Omit `sudo` otherwise.
-> For NFS configuration: Edit the script at the end and use `nobody:nogroup` as owner for the created directory with the `chown` command.
 
 To create a basic auth account use the following commands (optional)
 
@@ -60,10 +70,12 @@ $ htpasswd -nb <user> <password> | sudo tee "$(cat .env | grep "HOST_TRAEFIK_PAT
 > Replace the `<user>` and `<password>`placeholders.
 > Use `sudo` command as explained above.
 
-It is now possible to add the `user-auth` middleware as a service label [see here](#traefik). This will make sure that a route is only available after valid credentials have been provided.
+It is now possible to add the `basic-auth` middleware as a service label [see here](#traefik). This will make sure that a route is only available after valid credentials have been provided.
 
 ### Create docker secrets
 No docker secrets are required.
+
+> Depending on your custom traefik commands and configuration some secrets might me necessary.
 
 ### Create network
 Create a overlay network for the metrics collection and one for the proxy (traefik).
@@ -98,7 +110,7 @@ service-name:
       traefik.http.services.<service-name>.loadBalancer.sticky.cookie.name: "<random-string>"
 
       # Optional basic auth 
-      traefik.http.routers.<router-name>.middlewares: user-auth@file
+      traefik.http.routers.<router-name>.middlewares: basic-auth@file
   ...
 ```
 > Replace the `<annotations>` with correct values.

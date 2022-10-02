@@ -63,9 +63,9 @@ services:
       - ldap_config:/etc/ldap/slapd.d
       - ldap_backup:/data/backup
     environment:
-      - LDAP_BACKUP_TTL=10
-      - LDAP_BACKUP_CONFIG_CRON_EXP=* 4 * * *
-      - LDAP_BACKUP_DATA_CRON_EXP=* 4 * * *
+      - LDAP_BACKUP_TTL=14
+      - LDAP_BACKUP_CONFIG_CRON_EXP=0 4 * * *
+      - LDAP_BACKUP_DATA_CRON_EXP=0 4 * * *
     networks:
       - ldap_network
     deploy:

@@ -1,0 +1,17 @@
+http:
+  middlewares:
+    websecure-entrypoint-chain:
+      chain:
+        middlewares:
+          - secureHeaders@file
+
+    secureHeaders:
+      headers:
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+
+    basic-auth:
+      basicAuth:
+        usersFile: "/data/users.txt"

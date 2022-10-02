@@ -25,6 +25,8 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+      restart_policy:
+        condition: on-failure
       labels:
         traefik.enable: "true"
         traefik.http.routers.prometheus.entrypoints: ${PROMETHEUS_ENTRYPOINT:-websecure}
@@ -43,6 +45,8 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+      restart_policy:
+        condition: on-failure
       labels:
         traefik.enable: "true"
         traefik.http.routers.grafana.entrypoints: ${GRAFANA_ENTRYPOINT:-websecure}
@@ -63,6 +67,8 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+      restart_policy:
+        condition: on-failure
       labels:
         traefik.enable: "true"
         traefik.http.routers.alertmanager.entrypoints: ${ALERTMANAGER_ENTRYPOINT:-websecure}
@@ -71,7 +77,8 @@ services:
         traefik.http.services.alertmanager.loadbalancer.server.port: 9093
 
   node-exporter:
-    image: prom/node-exporter:v1.3.1
+    <<: *default-opts
+    image: prom/node-exporter:${NODE_EXPORTER_TAG}
     networks:
       - metrics_network
     environment:
@@ -89,6 +96,8 @@ services:
       - '--no-collector.ipvs'
     deploy:
       mode: global
+      restart_policy:
+        condition: on-failure
       resources:
         limits:
           memory: 128M

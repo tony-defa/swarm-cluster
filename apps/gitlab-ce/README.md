@@ -14,6 +14,7 @@ A centralized storage solution is required.
 
 ### Service dependencies
 `gitlab.yml` requires the following services to run:
+- `system/monitoring.yml`
 - `system/traefik.yml`
 - `apps/openldap/openldap.yml`: Optional: If available configure LDAP in `rb` file.
 

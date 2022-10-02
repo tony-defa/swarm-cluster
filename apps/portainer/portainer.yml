@@ -17,12 +17,14 @@ services:
       AGENT_PORT: 9001
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/docker/volumes:/var/lib/docker/volumes
     networks:
       - agent_network
     deploy:
       mode: global
+      restart_policy:
+        condition: on-failure
       placement:
         constraints: 
           - node.platform.os == linux
@@ -39,13 +41,15 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+      restart_policy:
+        condition: on-failure
       placement:
         constraints: 
           - node.role == manager
       labels:
         traefik.enable: "true"
-        traefik.http.routers.portainer.entrypoints: ${PORTAINER_ENTRYPOINT:-websecure}
-        traefik.http.routers.portainer.rule: Host(`${PORTAINER_DOMAIN:-portainer.localhost}`)
+        traefik.http.routers.portainer.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.portainer.rule: Host(`${DOMAIN:-portainer.localhost}`)
         traefik.http.routers.portainer.service: portainer
         traefik.http.services.portainer.loadbalancer.server.port: 9000
 

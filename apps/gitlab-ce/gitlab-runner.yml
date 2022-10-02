@@ -1,7 +1,18 @@
 version: "3.9"
 
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://127.0.0.1:12201"
+
 services:
   gitlab-runner-register:
+    <<: *default-opts
     image: gitlab/gitlab-runner:${GITLAB_RUNNER_TAG}
     command:
       - register
@@ -29,9 +40,10 @@ services:
         condition: none
 
   gitlab-runner:
+    <<: *default-opts
     image: gitlab/gitlab-runner:${GITLAB_RUNNER_TAG}
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - gitlab_runner_config:/etc/gitlab-runner
     networks:
       - gitlab_network

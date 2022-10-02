@@ -1,4 +1,4 @@
-external_url 'http://gitlab/'
+external_url 'http://gitlab.localhost/'
 gitlab_rails['initial_root_password'] = File.read('/run/secrets/gitlab_root_password')
 
 # Change to true to enable lfs - enabled by default if not defined
@@ -8,8 +8,9 @@ gitlab_rails['lfs_enabled'] = true
 puma['worker_processes'] = 2
 sidekiq['concurrency'] = 9
 
-# Turn off monitoring to reduce idle cpu and disk usage
-prometheus_monitoring['enable'] = false
+# Prometheus monitoring. Turn off, to reduce idle cpu and disk usage
+prometheus_monitoring['enable'] = true
+prometheus['listen_address'] = 'gitlab:9090'
 
 
 gitlab_rails['ldap_enabled'] = false

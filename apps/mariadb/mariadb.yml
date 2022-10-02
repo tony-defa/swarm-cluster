@@ -1,8 +1,19 @@
 version: '3.8'
+
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://127.0.0.1:12201"
  
 services:
   db:
-    image: mariadb
+    <<: *default-opts
+    image: mariadb:${MARIADB_TAG}
     volumes:
       - mariadb_data:/var/lib/mysql
     secrets:

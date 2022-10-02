@@ -1,0 +1,35 @@
+version: '3.8'
+
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+
+services:
+  error-pages:
+    <<: *default-opts
+    image: tarampampam/error-pages:${TAG}
+    networks:
+      - proxy_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.error-pages-router.priority: 10
+        traefik.http.routers.error-pages-router.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.error-pages-router.rule: HostRegexp(`{host:.+}`)
+        traefik.http.routers.error-pages-router.service: error-pages-service
+        traefik.http.services.error-pages-service.loadbalancer.server.port: 8080
+
+        # "errorPages" settings
+        traefik.http.routers.error-pages-router.middlewares: errorPages
+        traefik.http.middlewares.errorPages.errors.status: 400-599
+        traefik.http.middlewares.errorPages.errors.service: error-pages-service
+        traefik.http.middlewares.errorPages.errors.query: /{status}.html
+
+networks:
+  proxy_network:
+    external: true

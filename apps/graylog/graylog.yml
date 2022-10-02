@@ -18,6 +18,9 @@ services:
       - mongo_data:/data/db
     networks:
       - graylog
+    deploy:
+      restart_policy:
+        condition: on-failure
 
   # Elasticsearch: https://www.elastic.co/guide/en/elasticsearch/reference/6.x/docker.html
   elasticsearch:
@@ -43,6 +46,9 @@ services:
           memory: 1g
     networks:
       - graylog
+    deploy:
+      restart_policy:
+        condition: on-failure
 
   # Graylog: https://hub.docker.com/r/graylog/graylog/
   graylog:
@@ -70,6 +76,8 @@ services:
       # GELF UDP
       - 12201:12201/udp
     deploy:
+      restart_policy:
+        condition: on-failure
       labels:
         traefik.enable: "true"
         traefik.http.routers.graylog.entrypoints: ${ENTRYPOINT:-websecure}

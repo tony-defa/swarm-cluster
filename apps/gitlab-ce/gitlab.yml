@@ -1,15 +1,23 @@
 version: "3.9"
 
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://127.0.0.1:12201"
+
 services:
   gitlab:
+    <<: *default-opts
     image: gitlab/gitlab-ce:${GITLAB_TAG}
     networks:
       - gitlab_network
       - proxy_network
-    # ports:
-    #   - "22:22"
-    #   - "80:80"
-    #   - "443:443"
+      - metrics_network
     volumes:
       - gitlab_data:/var/opt/gitlab
       - gitlab_config:/etc/gitlab
@@ -24,6 +32,8 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+      restart_policy:
+        condition: on-failure
       labels:
         traefik.enable: "true"
         traefik.http.routers.gitlab.entrypoints: ${ENTRYPOINT:-websecure}
@@ -45,6 +55,9 @@ networks:
     attachable: true
 
   proxy_network:
+    external: true
+
+  metrics_network:
     external: true
 
 volumes:

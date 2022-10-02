@@ -67,7 +67,7 @@ Having done all the previous steps correctly, you can now deploy a stack by simp
 
 ```sh
 $ cd folder-of-interest/
-$ env $(cat .env | grep "^[A-Z]" | xargs) docker stack deploy -c stack-file.yml stack-name
+$ env -i $(cat .env | grep "^[A-Z]" | xargs) docker stack deploy -c stack-file.yml stack-name
 ```
 
 or omit the `env` part of the command, if there is no `.env`-file associated with the stack:
