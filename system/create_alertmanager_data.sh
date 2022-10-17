@@ -18,4 +18,4 @@ done
 
 chown -R :docker $DATA_PATH
 
-curl -X POST http://$DOMAIN/-/reload
+curl -X POST http://$DOMAIN/-/reload -L -k
