@@ -15,21 +15,22 @@ services:
     <<: *default-opts
     image: bitnami/mariadb:${MARIADB_TAG}
     volumes:
-      - mariadb_data:/bitnami/mariadb
+      - mariadb_ha_data:/bitnami/mariadb
     secrets:
+      - mariadb_ha_database
+      - mariadb_ha_user
       - mariadb_ha_db_password
+      - mariadb_ha_repl_user
+      - mariadb_ha_repl_password
       - mariadb_ha_root_password
-      - mariadb_ha_replication_password
     environment:
-      - MARIADB_DATABASE=${DB_NAME}
-      - MARIADB_USER=${DB_USER}
+      - MARIADB_DATABASE_FILE=/run/secrets/mariadb_ha_database
+      - MARIADB_USER_FILE=/run/secrets/mariadb_ha_user
       - MARIADB_PASSWORD_FILE=/run/secrets/mariadb_ha_db_password
-      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/mariadb_ha_root_password
       - MARIADB_REPLICATION_MODE=master
-      - MARIADB_REPLICATION_USER=${DB_REPLICATION_USER}
-      - MARIADB_REPLICATION_PASSWORD_FILE=/run/secrets/mariadb_ha_replication_password
-      - MARIADB_SKIP_TEST_DB=yes
-      #- MARIADB_EXTRA_FLAGS='--wait_timeout=28800 --interactive_timeout=28800 --max_allowed_packet=256M'
+      - MARIADB_REPLICATION_USER_FILE=/run/secrets/mariadb_ha_repl_user
+      - MARIADB_REPLICATION_PASSWORD_FILE=/run/secrets/mariadb_ha_repl_password
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/mariadb_ha_root_password
     networks:
       - mariadb_ha_network
     deploy:
@@ -44,16 +45,16 @@ services:
     <<: *default-opts
     image: bitnami/mariadb:${MARIADB_TAG}
     secrets:
+      - mariadb_ha_repl_user
+      - mariadb_ha_repl_password
       - mariadb_ha_root_password
-      - mariadb_ha_replication_password
     environment:
-      - MARIADB_REPLICATION_MODE=slave
-      - MARIADB_REPLICATION_USER=${DB_REPLICATION_USER}
-      - MARIADB_REPLICATION_PASSWORD_FILE=/run/secrets/mariadb_ha_replication_password
       - MARIADB_MASTER_HOST=db
       - MARIADB_MASTER_PORT_NUMBER=3306
+      - MARIADB_REPLICATION_MODE=slave
+      - MARIADB_REPLICATION_USER_FILE=/run/secrets/mariadb_ha_repl_user
+      - MARIADB_REPLICATION_PASSWORD_FILE=/run/secrets/mariadb_ha_repl_password
       - MARIADB_MASTER_ROOT_PASSWORD_FILE=/run/secrets/mariadb_ha_root_password
-      #- MARIADB_EXTRA_FLAGS='--wait_timeout=28800 --interactive_timeout=28800 --max_allowed_packet=256M'
     networks:
       - mariadb_ha_network
     deploy:
@@ -64,12 +65,50 @@ services:
       restart_policy:
         condition: on-failure
 
+  db-backup:
+    <<: *default-opts
+    image: bitnami/mariadb:${MARIADB_TAG}
+    secrets:
+      - mariadb_ha_database
+      - mariadb_ha_user
+      - mariadb_ha_db_password
+    command: 
+      - sh
+      - -c
+      - | 
+        while true; do
+          sleep $$BACKUP_FREQUENCY;
+          DB_NAME=$$(cat /run/secrets/mariadb_ha_database);
+          DB_USER=$$(cat /run/secrets/mariadb_ha_user);
+          DB_PASSWORD=$$(cat /run/secrets/mariadb_ha_db_password);
+          backup_dir=/bitnami/mariadb/backup;
+          mkdir -p $$backup_dir;
+          printenv
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating SQL dump of $$DB_NAME database..."
+          /opt/bitnami/mariadb/bin/mysqldump -u $$DB_USER --password=$$DB_PASSWORD --host=db --databases $$DB_NAME --no-tablespaces > $$backup_dir/db_$$(date +'%Y%m%d_%H%M%S').sql;
+          find $$backup_dir -iname "db_*.sql" -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
+        done
+    volumes:
+      - mariadb_ha_data:/bitnami/mariadb
+    networks:
+      - mariadb_ha_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
 secrets:
+  mariadb_ha_database:
+    external: true
+  mariadb_ha_user:
+    external: true
   mariadb_ha_db_password:
     external: true
   mariadb_ha_root_password:
     external: true 
-  mariadb_ha_replication_password:
+  mariadb_ha_repl_user:
+    external: true 
+  mariadb_ha_repl_password:
     external: true 
       
 networks:
@@ -77,7 +116,7 @@ networks:
     external: true
 
 volumes:
-  mariadb_data:
+  mariadb_ha_data:
     driver: local
     driver_opts:
       device: ${HOST_MARIADB_DATA}
