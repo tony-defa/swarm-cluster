@@ -1,0 +1,19 @@
+version: '3.8'
+
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+ 
+services:
+  watchtower:
+    <<: *default-opts
+    image: containrrr/watchtower:${WATCHTOWER_TAG}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
