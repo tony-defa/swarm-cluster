@@ -45,6 +45,37 @@ services:
       restart_policy:
         condition: on-failure
 
+  db-backup:
+    <<: *default-opts
+    image: mariadb:${MARIADB_TAG}
+    volumes:
+      - mariadb_backup:/backup
+    secrets:
+      - mariadb_db_database
+      - mariadb_db_user
+      - mariadb_db_password
+    command: 
+      - sh
+      - -c
+      - | 
+        while true; do
+          sleep $$BACKUP_FREQUENCY;
+          DB_NAME=$$(cat /run/secrets/mariadb_db_database);
+          DB_USER=$$(cat /run/secrets/mariadb_db_user);
+          DB_PASSWORD=$$(cat /run/secrets/mariadb_db_password);
+          backup_dir=/backup;
+          mkdir -p $$backup_dir;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating SQL dump of $$DB_NAME database...";
+          /usr/bin/mysqldump -u $$DB_USER --password=$$DB_PASSWORD --host=db --databases $$DB_NAME --no-tablespaces > $$backup_dir/db_$$(date +'%Y%m%d_%H%M%S').sql;
+          find $$backup_dir -iname "db_*.sql" -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
+        done
+    networks:
+      - mariadb_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
 secrets:
   mariadb_db_database:
     external: true
@@ -67,5 +98,15 @@ volumes:
       type: none
       o: bind
       # device: ":${HOST_MARIADB_DATA?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  mariadb_backup:
+    driver: local
+    driver_opts:
+      device: ${HOST_MARIADB_BACKUP}
+      type: none
+      o: bind
+      # device: ":${HOST_MARIADB_BACKUP?Variable not set}"
       # type: nfs
       # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
