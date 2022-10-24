@@ -64,6 +64,7 @@ services:
           sleep $$BACKUP_FREQUENCY;
           backup_dir=/backup/wordpress_$$(date +'%Y%m%d_%H%M%S');
           mkdir -p $$backup_dir/data;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of WordPress data including SQL dump of $$DB_NAME database...";
           /usr/bin/mysqldump -u $$DB_USER --password=$$DB_PASSWORD --host=wordpress-db --databases $$DB_NAME --no-tablespaces > $$backup_dir/db.sql;
           cp -r /data/* $$backup_dir/data/.;
           find /backup/wordpress_* -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
