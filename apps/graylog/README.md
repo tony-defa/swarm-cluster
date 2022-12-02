@@ -31,6 +31,12 @@ service-name:
   logging:
     driver: "gelf"
     options:
-      gelf-address: "udp://127.0.0.1:12201"
+      gelf-address: "udp://172.17.0.1:12201"
   ...
+```
+
+> WARNING: Deploying this stack will expose port 12201 (udp) to the WWW. If you do not intend to have this port exposed than you need to block the port either via physical firewall or through software on each node. Example for the latter could look like this:
+
+```sh
+sudo iptables -I DOCKER-USER -i eth0 -p udp --dport 12201 -j DROP
 ```
