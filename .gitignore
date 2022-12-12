@@ -1,6 +1,7 @@
 /**/target/
 /**/config/*/*
 !/**/config/*/example.*
+/**/override.*.yml
 .env
 .rb
 
