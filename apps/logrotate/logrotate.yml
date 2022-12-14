@@ -26,6 +26,6 @@ volumes:
   traefik_log_path:
     driver: local
     driver_opts:
-      device: ${TRAEFIK_LOG_PATH}
+      device: ${TRAEFIK_HOST_LOG_PATH}
       type: none
       o: bind
