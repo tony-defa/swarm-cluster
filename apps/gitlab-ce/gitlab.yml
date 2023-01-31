@@ -57,7 +57,7 @@ services:
           docker exec -t $$containerId gitlab-backup create
           code=`echo $$?`
           if [ $$code -eq 0 ]; then
-            docker exec -t $$containerId bash -c 'cd /var/opt/gitlab/backups/; ls -t | head -1 | xargs -I {} tar -rf "{}" /etc/gitlab/gitlab-secrets.json'
+            docker exec -t $$containerId bash -c 'cd /var/opt/gitlab/backups/; ls -t | head -1 | xargs -I {} tar -rf "{}" /etc/gitlab/gitlab-secrets.json /etc/gitlab/gitlab.rb'
             echo "$$(date +'%Y-%m-%d %H:%M:%S %Z') -- Backup completed! Next backup in $$BACKUP_FREQUENCY";
           else
             echo "$$(date +'%Y-%m-%d %H:%M:%S %Z') -- Backup failed! Next backup in $$BACKUP_FREQUENCY";
