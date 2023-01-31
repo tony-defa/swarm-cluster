@@ -23,10 +23,10 @@ services:
       - gitlab_config:/etc/gitlab
       - gitlab_logs:/var/log/gitlab
     environment:
-      GITLAB_OMNIBUS_CONFIG: "from_file('/omnibus_config.rb')"
+      GITLAB_OMNIBUS_CONFIG: "from_file('/etc/gitlab/gitlab.rb')"
     configs:
       - source: gitlab
-        target: /omnibus_config.rb
+        target: /etc/gitlab/gitlab.rb
     secrets:
       - gitlab_root_password
     deploy:
@@ -41,9 +41,47 @@ services:
         traefik.http.routers.gitlab.service: gitlab
         traefik.http.services.gitlab.loadbalancer.server.port: 80
 
+  gitlab-backup:
+    <<: *default-opts
+    image: docker:latest
+    command: 
+      - sh
+      - -c
+      - | 
+        echo "$$(date +'%Y-%m-%d %H:%M:%S %Z') -- Backup service started on $$NODE_HOSTNAME. Waiting for $$BACKUP_FREQUENCY until first backup.";
+        sleep $$BACKUP_FREQUENCY;
+        containerId=`docker ps -qf "name=gitlab_gitlab.1"`
+        while [ ! -z "$$containerId" ]; do
+          echo "$$(date +'%Y-%m-%d %H:%M:%S %Z') -- Found GitLab instance running on $$NODE_HOSTNAME with the container id: $$containerId"
+          echo "$$(date +'%Y-%m-%d %H:%M:%S %Z') -- Creating complete backup of GitLab...";
+          docker exec -t $$containerId gitlab-backup create
+          code=`echo $$?`
+          if [ $$code -eq 0 ]; then
+            docker exec -t $$containerId bash -c 'cd /var/opt/gitlab/backups/; ls -t | head -1 | xargs -I {} tar -rf "{}" /etc/gitlab/gitlab-secrets.json'
+            echo "$$(date +'%Y-%m-%d %H:%M:%S %Z') -- Backup completed! Next backup in $$BACKUP_FREQUENCY";
+          else
+            echo "$$(date +'%Y-%m-%d %H:%M:%S %Z') -- Backup failed! Next backup in $$BACKUP_FREQUENCY";
+          fi
+          sleep $$BACKUP_FREQUENCY;
+          containerId=`docker ps -qf "name=gitlab_gitlab.1"`
+        done
+        echo "$$(date +'%Y-%m-%d %H:%M:%S %Z') -- GitLab instance not found on $$NODE_HOSTNAME. Skipping GitLab backup service."
+        exit 255
+    environment:
+      NODE_HOSTNAME: '{{.Node.Hostname}}'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    stop_grace_period: 1s
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
 configs:
   gitlab:
     file: ./.rb
+    name: gitlab-rb-1
 
 secrets:
   gitlab_root_password:
