@@ -49,7 +49,7 @@ services:
       - sh
       - -c
       - | 
-        echo "$$(date +'%Y-%m-%d %H:%M:%S %Z') -- Backup service started on $$NODE_HOSTNAME. Waiting for $$BACKUP_FREQUENCY until first backup.";
+        echo "$$(date +'%Y-%m-%d %H:%M:%S %Z') -- Backup service started on $$NODE_HOSTNAME. Waiting for 10 minutes until first backup.";
         sleep 10m; # wait for gitlab to start
         containerId=`docker ps -qf "name=gitlab_gitlab.1"`
         while [ ! -z "$$containerId" ]; do
