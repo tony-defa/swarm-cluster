@@ -22,6 +22,7 @@ services:
       - gitlab_data:/var/opt/gitlab
       - gitlab_config:/etc/gitlab
       - gitlab_logs:/var/log/gitlab
+      - gitlab_backups:/var/opt/backups
     environment:
       GITLAB_OMNIBUS_CONFIG: "from_file('/etc/gitlab/gitlab.rb')"
     configs:
@@ -49,7 +50,7 @@ services:
       - -c
       - | 
         echo "$$(date +'%Y-%m-%d %H:%M:%S %Z') -- Backup service started on $$NODE_HOSTNAME. Waiting for $$BACKUP_FREQUENCY until first backup.";
-        sleep $$BACKUP_FREQUENCY;
+        sleep 10m; # wait for gitlab to start
         containerId=`docker ps -qf "name=gitlab_gitlab.1"`
         while [ ! -z "$$containerId" ]; do
           echo "$$(date +'%Y-%m-%d %H:%M:%S %Z') -- Found GitLab instance running on $$NODE_HOSTNAME with the container id: $$containerId"
@@ -57,7 +58,7 @@ services:
           docker exec -t $$containerId gitlab-backup create
           code=`echo $$?`
           if [ $$code -eq 0 ]; then
-            docker exec -t $$containerId bash -c 'cd /var/opt/gitlab/backups/; ls -t | head -1 | xargs -I {} tar -rf "{}" /etc/gitlab/gitlab-secrets.json /etc/gitlab/gitlab.rb'
+            docker exec -t $$containerId bash -c 'cd /var/opt/backups/; ls -t | head -1 | xargs -I {} tar -rf "{}" /etc/gitlab/gitlab-secrets.json /etc/gitlab/gitlab.rb'
             echo "$$(date +'%Y-%m-%d %H:%M:%S %Z') -- Backup completed! Next backup in $$BACKUP_FREQUENCY";
           else
             echo "$$(date +'%Y-%m-%d %H:%M:%S %Z') -- Backup failed! Next backup in $$BACKUP_FREQUENCY";
@@ -76,7 +77,7 @@ services:
       mode: global
       restart_policy:
         condition: on-failure
-        delay: 600s
+        delay: ${BACKUP_FREQUENCY}
 
 configs:
   gitlab:
@@ -126,5 +127,15 @@ volumes:
       type: none
       o: bind
       # device: ":${HOST_GITLAB_LOGS?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  gitlab_backups:
+    driver: local
+    driver_opts:
+      device: ${HOST_GITLAB_BACKUPS}
+      type: none
+      o: bind
+      # device: ":${HOST_GITLAB_BACKUPS?Variable not set}"
       # type: nfs
       # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1

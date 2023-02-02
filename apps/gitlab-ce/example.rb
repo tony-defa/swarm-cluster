@@ -44,6 +44,6 @@ gitlab_rails['ldap_servers'] = {
 
 # Backups
 gitlab_rails['manage_backup_path'] = true
-gitlab_rails['backup_path'] = "/var/opt/gitlab/backups"
+gitlab_rails['backup_path'] = "/var/opt/backups"
 ## Limit backup lifetime to 14 days - 1209600 seconds
 gitlab_rails['backup_keep_time'] = 1209600
