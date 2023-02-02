@@ -55,7 +55,7 @@ services:
         traefik.http.routers.portainer.service: portainer
         traefik.http.services.portainer.loadbalancer.server.port: 9000
 
-  portainer-backup:
+  backup:
     <<: *default-opts
     image: savagesoftware/portainer-backup:${PORTAINER_BACKUP_TAG}
     command: schedule
