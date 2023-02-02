@@ -1,6 +1,8 @@
 version: '3.8'
 
 x-default-opts: &default-opts
+  env_file:
+    .env
   logging:
     options:
       max-size: "1m"
@@ -53,6 +55,23 @@ services:
         traefik.http.routers.portainer.service: portainer
         traefik.http.services.portainer.loadbalancer.server.port: 9000
 
+  portainer-backup:
+    <<: *default-opts
+    image: savagesoftware/portainer-backup:${PORTAINER_BACKUP_TAG}
+    command: schedule
+    networks:
+      - agent_network
+    environment:
+      PORTAINER_BACKUP_SCHEDULE: 0 1 * * SUN
+      PORTAINER_BACKUP_DIRECTORY: /backups
+    volumes:
+      - portainer_backups:/backups
+    deploy:
+      mode: replicated
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
 networks:
   proxy_network:
     external: true
@@ -67,5 +86,15 @@ volumes:
       type: none
       o: bind
       # device: ":${HOST_PORTAINER_PATH?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  portainer_backups:
+    driver: local
+    driver_opts:
+      device: ${HOST_BACKUP_PATH}
+      type: none
+      o: bind
+      # device: ":${HOST_BACKUP_PATH?Variable not set}"
       # type: nfs
       # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
