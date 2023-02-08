@@ -1,6 +1,8 @@
 version: '3.9'
 
 x-default-opts: &default-opts
+  env_file:
+    .env
   logging:
     options:
       max-size: "1m"
@@ -52,7 +54,7 @@ services:
           backup_dir=/usr/local/xwiki/backup;
           mkdir -p $$backup_dir;
           echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating config files backup...";
-          tar -cvzf $$backup_dir/xwiki_config_backup_$$(date +'%Y%m%d_%H%M%S').tar.gz; $$data_dir/xwiki.cfg $$data_dir/xwiki.properties $$data_dir/hibernate.cfg.xml
+          tar -cvzf $$backup_dir/xwiki_config_backup_$$(date +'%Y%m%d_%H%M%S').tar.gz $$data_dir/xwiki.cfg $$data_dir/xwiki.properties $$data_dir/hibernate.cfg.xml
           find $$backup_dir -iname "xwiki_config_backup_*.tar.gz" -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
         done
     deploy:
