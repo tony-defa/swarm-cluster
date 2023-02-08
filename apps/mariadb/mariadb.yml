@@ -69,6 +69,7 @@ services:
           echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating SQL dump of $$DB_NAME database...";
           /usr/bin/mysqldump -u $$DB_USER --password=$$DB_PASSWORD --host=db --databases $$DB_NAME --no-tablespaces > $$backup_dir/db_$$(date +'%Y%m%d_%H%M%S').sql;
           find $$backup_dir -iname "db_*.sql" -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next dump in $$BACKUP_FREQUENCY.";
         done
     networks:
       - mariadb_network

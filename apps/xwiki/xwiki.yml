@@ -56,6 +56,7 @@ services:
           echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating config files backup...";
           tar -cvzf $$backup_dir/xwiki_config_backup_$$(date +'%Y%m%d_%H%M%S').tar.gz $$data_dir/xwiki.cfg $$data_dir/xwiki.properties $$data_dir/hibernate.cfg.xml
           find $$backup_dir -iname "xwiki_config_backup_*.tar.gz" -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in $$BACKUP_FREQUENCY.";
         done
     deploy:
       restart_policy:

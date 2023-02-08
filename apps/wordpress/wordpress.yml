@@ -69,6 +69,7 @@ services:
           /usr/bin/mysqldump -u $$DB_USER --password=$$DB_PASSWORD --host=wordpress-db --databases $$DB_NAME --no-tablespaces > $$backup_dir/db.sql;
           cp -r /data/* $$backup_dir/data/.;
           find /backup/wordpress_* -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in $$BACKUP_FREQUENCY.";
         done
     volumes:
       - wordpress_backup:/backup
