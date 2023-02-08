@@ -3,7 +3,7 @@
 MariaDB is a community-developed, commercially supported fork of the MySQL relational database management system, intended to remain free and open-source software under the GNU General Public License.
 
 ### `mariadb.yml`
-Contains the database.
+Contains the database and a service that creates a db dump in a regular interval.
 
 ## Perquisites
 ### Storage
@@ -33,4 +33,9 @@ $ docker network create --attachable -d overlay mariadb_network
 ```
 
 ## Other notes
-No notes
+### Backup 
+The backup service uses `mysqldump` to dump the database to a file. The dump interval is defined in the environment variable `BACKUP_FREQUENCY`. The files are kept for `RETENTION_DAYS` while older files will be deleted automatically.
+
+### Restore 
+To restore a backup simply deploy the `mariadb` stack with an empty data volume. After that follow the instruction from the official documentation: https://mariadb.com/kb/en/restoring-data-from-dump-files/
+> Use the `docker exec -t <service_name> ...` command to execute the restore command.
