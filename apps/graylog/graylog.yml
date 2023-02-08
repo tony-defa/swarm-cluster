@@ -95,6 +95,7 @@ services:
       - sh
       - -c
       - | 
+        echo "$$(date +'%FT%T.%3N%z') Backup service started. First dump will be executed in $$BACKUP_FREQUENCY.";
         while true; do
           sleep $$BACKUP_FREQUENCY;
           backup_dir=/backup/mongo;

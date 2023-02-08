@@ -76,6 +76,7 @@ services:
       - sh
       - -c
       - | 
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First dump will be executed in $$BACKUP_FREQUENCY.";
         while true; do
           sleep $$BACKUP_FREQUENCY;
           DB_NAME=$$(cat /run/secrets/mariadb_ha_database);
