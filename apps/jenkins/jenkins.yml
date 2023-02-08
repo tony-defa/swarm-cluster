@@ -1,6 +1,8 @@
 version: '3.9'
 
 x-default-opts: &default-opts
+  env_file:
+    .env
   logging:
     options:
       max-size: "1m"
@@ -29,6 +31,34 @@ services:
         traefik.http.routers.jenkins.service: jenkins
         traefik.http.services.jenkins.loadbalancer.server.port: 8080
 
+  backup:
+    <<: *default-opts
+    image: alpine:latest
+    volumes:
+      - jenkins_data:/var/jenkins_home
+      - backup_data:/backup
+    command:
+      - sh
+      - -c
+      - | 
+        SECS=$$(expr `date -d "02:00" +%s` + 86400 - `date +%s`);
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed at 2 AM.";
+        sleep $$SECS
+        while true; do
+          data_dir=/var/jenkins_home;
+          backup_dir=/backup;
+          mkdir -p $$backup_dir;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating data backup...";
+          tar -C $$data_dir -cvzf $$backup_dir/jenkins_data_backup_$$(date +'%Y%m%d_%H%M%S').tar.gz *.xml jobs plugins/*.hpi plugins/*.jpi --exclude="**/builds"
+          find $$backup_dir -iname "jenkins_data_backup_*.tar.gz" -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in $$BACKUP_FREQUENCY.";
+          sleep $$BACKUP_FREQUENCY;
+        done
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
 networks:
   proxy_network:
     external: true
@@ -41,5 +71,15 @@ volumes:
       type: none
       o: bind
       # device: ":${HOST_JENKINS_DATA?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  backup_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_JENKINS_BACKUP}
+      type: none
+      o: bind
+      # device: ":${HOST_JENKINS_BACKUP?Variable not set}"
       # type: nfs
       # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
