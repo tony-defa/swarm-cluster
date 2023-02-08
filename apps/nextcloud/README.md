@@ -3,7 +3,7 @@
 A safe home for all your data. Access & share your files, calendars, contacts, mail & more from any device, on your terms.
 
 ### `nextcloud.yml`
-Contains only the application without the underlying database.
+Contains only the application without the underlying database and also provides a backup service running on an alpine image.
 
 ## Perquisites
 ### Storage
@@ -28,4 +28,7 @@ External secrets from service dependencies are required.
 No network needs to be created.
 
 ## Other notes
-No notes
+### Backup
+The backup service securely backs up the all data files into a compressed tar archive. The backup interval is defined in the environment variable `BACKUP_FREQUENCY`. Old archives are deleted automatically after the amount of days specified in the environment variable `RETENTION_DAYS`. 
+
+The database is not backed up by this service. This is taken care of the separate database stack found in `apps/mariadb.yml`.

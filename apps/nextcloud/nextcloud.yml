@@ -50,6 +50,36 @@ services:
         traefik.http.middlewares.nextcloud-redirectregex.redirectregex.permanent: "true"
         traefik.http.routers.nextcloud.middlewares: nextcloud-redirectregex@docker
 
+  backup:
+    <<: *default-opts
+    image: alpine:latest
+    volumes:
+      - nextcloud_storage:/var/www/html/data
+      - nextcloud_data:/var/www/html
+      - nextcloud_backup:/backup
+    command:
+      - sh
+      - -c
+      - | 
+        SECS=$$(expr `date -d "01:00" +%s` + 86400 - `date +%s`);
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed at 1 AM.";
+        sleep $$SECS
+        while true; do
+          backup_dir=/backup;
+          mkdir -p $$backup_dir;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of Nextcloud data...";
+          sed -i -E "s/(\"|')maintenance(\"|')[ \t]*?=>[ \t]*?false,/'maintenance' => true,/g" /var/www/html/config/config.php;
+          sleep 30s;
+          tar -cvzf $$backup_dir/nc_data_backup_$$(date +'%Y%m%d_%H%M%S').tar.gz /var/www/html/;
+          sed -i -E "s/(\"|')maintenance(\"|')[ \t]*?=>[ \t]*?true,/'maintenance' => false,/g" /var/www/html/config/config.php;
+          find $$backup_dir -iname "nc_data_backup_*.tar.gz" -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in $$BACKUP_FREQUENCY.";
+          sleep $$BACKUP_FREQUENCY;
+        done
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
 
 secrets:
   nextcloud_admin_user:
@@ -82,5 +112,12 @@ volumes:
     driver: local
     driver_opts:
       device: ${HOST_NEXTCLOUD_STORAGE}
+      type: none
+      o: bind
+
+  nextcloud_backup:
+    driver: local
+    driver_opts:
+      device: ${HOST_NEXTCLOUD_BACKUP}
       type: none
       o: bind
