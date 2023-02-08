@@ -36,6 +36,30 @@ services:
         traefik.http.routers.xwiki.service: xwiki
         traefik.http.services.xwiki.loadbalancer.server.port: 8080
 
+  backup:
+    <<: *default-opts
+    image: "alpine:latest"
+    volumes:
+      - xwiki_data:/usr/local/xwiki
+    command:
+      - sh
+      - -c
+      - | 
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First data backup will be executed in $$BACKUP_FREQUENCY.";
+        while true; do
+          sleep $$BACKUP_FREQUENCY;
+          data_dir=/usr/local/xwiki/data;
+          backup_dir=/usr/local/xwiki/backup;
+          mkdir -p $$backup_dir;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating config files backup...";
+          tar -cvzf $$backup_dir/xwiki_config_backup_$$(date +'%Y%m%d_%H%M%S').tar.gz; $$data_dir/xwiki.cfg $$data_dir/xwiki.properties $$data_dir/hibernate.cfg.xml
+          find $$backup_dir -iname "xwiki_config_backup_*.tar.gz" -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
+        done
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
 secrets:
   mariadb_db_database:
     external: true
