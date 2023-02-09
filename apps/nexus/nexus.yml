@@ -18,7 +18,7 @@ services:
       - proxy_network
     volumes:
       - nexus_data:/nexus-data
-      - HOST_NEXUS_BACKUP:/backup
+      - nexus_backup:/backup
     deploy:
       mode: replicated
       replicas: 1
