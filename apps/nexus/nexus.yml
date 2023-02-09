@@ -1,6 +1,8 @@
 version: "3.9"
 
 x-default-opts: &default-opts
+  env_file:
+    .env
   logging:
     options:
       max-size: "1m"
