@@ -16,6 +16,7 @@ services:
       - proxy_network
     volumes:
       - nexus_data:/nexus-data
+      - HOST_NEXUS_BACKUP:/backup
     deploy:
       mode: replicated
       replicas: 1
@@ -40,5 +41,15 @@ volumes:
       type: none
       o: bind
       # device: ":${HOST_NEXUS_DATA?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  nexus_backup:
+    driver: local
+    driver_opts:
+      device: ${HOST_NEXUS_BACKUP}
+      type: none
+      o: bind
+      # device: ":${HOST_NEXUS_BACKUP?Variable not set}"
       # type: nfs
       # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
