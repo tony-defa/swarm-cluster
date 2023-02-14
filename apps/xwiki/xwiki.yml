@@ -15,7 +15,7 @@ services:
     <<: *default-opts
     image: "xwiki:lts"
     volumes:
-      - xwiki_data:/usr/local/xwiki
+      - data:/usr/local/xwiki
     secrets:
       - mariadb_db_user
       - mariadb_db_password
@@ -42,7 +42,8 @@ services:
     <<: *default-opts
     image: "alpine:latest"
     volumes:
-      - xwiki_data:/usr/local/xwiki
+      - data:/usr/local/xwiki
+      - backup:/usr/local/xwiki/backup
     command:
       - sh
       - -c
@@ -79,7 +80,14 @@ networks:
     external: true
 
 volumes:
-  xwiki_data:
+  data:
+    driver: local
+    driver_opts:
+      device: ${HOST_XWIKI_DATA}
+      type: none
+      o: bind
+
+  backup:
     driver: local
     driver_opts:
       device: ${HOST_XWIKI_DATA}
