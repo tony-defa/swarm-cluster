@@ -31,6 +31,31 @@ services:
         traefik.http.routers.nexus.service: nexus
         traefik.http.services.nexus.loadbalancer.server.port: 8081
 
+  cleanup:
+    <<: *default-opts
+    image: "alpine:latest"
+    volumes:
+      - nexus_backup:/backup
+    command:
+      - sh
+      - -c
+      - | 
+        [ -z $$RETENTION_DAYS ] && exit
+        backup_dir=/backup;
+        mkdir -p $$backup_dir;
+        chown 200:200 $$backup_dir;
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup removal service started.";
+        while true; do
+          sleep 24h;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Removing old backups, if available...";
+          find $$backup_dir -iname "*.bak" -mtime +$$RETENTION_DAYS -print -exec rm -rf {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Done!";
+        done
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
 networks:
   proxy_network:
     external: true
