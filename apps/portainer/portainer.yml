@@ -63,11 +63,36 @@ services:
       - agent_network
     environment:
       PORTAINER_BACKUP_SCHEDULE: 0 1 * * SUN
-      PORTAINER_BACKUP_DIRECTORY: /backups
+      PORTAINER_BACKUP_DIRECTORY: /backup
     volumes:
-      - portainer_backups:/backups
+      - portainer_backup:/backup
     deploy:
       mode: replicated
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
+  cleanup:
+    <<: *default-opts
+    image: "alpine:latest"
+    volumes:
+      - portainer_backup:/backup
+    command:
+      - sh
+      - -c
+      - | 
+        [ -z $$RETENTION_DAYS ] && exit
+        backup_dir=/backup;
+        mkdir -p $$backup_dir;
+        ext=$${PORTAINER_BACKUP_FILENAME#*.};
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup removal service started.";
+        while true; do
+          sleep 24h;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Removing old backups, if available...";
+          find $$backup_dir -iname "*.$$ext" -mtime +$$RETENTION_DAYS -print -exec rm -rf {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Done!";
+        done
+    deploy:
       restart_policy:
         condition: on-failure
         delay: 600s
@@ -89,7 +114,7 @@ volumes:
       # type: nfs
       # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
 
-  portainer_backups:
+  portainer_backup:
     driver: local
     driver_opts:
       device: ${HOST_BACKUP_PATH}
