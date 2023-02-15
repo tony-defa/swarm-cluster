@@ -47,3 +47,4 @@ gitlab_rails['manage_backup_path'] = true
 gitlab_rails['backup_path'] = "/var/opt/backup"
 ## Limit backup lifetime to 14 days - 1209600 seconds
 gitlab_rails['backup_keep_time'] = 1209600
+gitlab_rails['backup_archive_permissions'] = 0640
