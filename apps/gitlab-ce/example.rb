@@ -1,4 +1,4 @@
-external_url 'http://gitlab.localhost/'
+external_url 'http://gitlab.host.local/'
 gitlab_rails['initial_root_password'] = File.read('/run/secrets/gitlab_root_password')
 
 # Change to true to enable lfs - enabled by default if not defined

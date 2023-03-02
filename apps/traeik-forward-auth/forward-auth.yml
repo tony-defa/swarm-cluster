@@ -19,7 +19,7 @@ services:
 
       ## Example rule
       #- --rule.allowExternal.action=allow
-      #- --rule.allowExternal.rule=HostRegexp(`{subdomain:[a-z0-9]+}.localhost`)
+      #- --rule.allowExternal.rule=HostRegexp(`{subdomain:[a-z0-9]+}.host.local`)
     networks:
       - proxy_network
     deploy:
@@ -28,7 +28,7 @@ services:
       labels:
         traefik.enable: "true"
         traefik.http.routers.oauth.entrypoints: ${FORWARD_AUTH_ENTRYPOINT:-websecure}
-        traefik.http.routers.oauth.rule: Host(`${FORWARD_AUTH_DOMAIN:-auth.localhost}`)
+        traefik.http.routers.oauth.rule: Host(`${FORWARD_AUTH_DOMAIN:-auth.host.local}`)
         traefik.http.routers.oauth.service: oauth
         traefik.http.services.oauth.loadbalancer.server.port: 4181
 

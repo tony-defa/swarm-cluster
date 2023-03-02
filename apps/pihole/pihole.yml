@@ -41,7 +41,7 @@ services:
       labels:
         traefik.enable: "true"
         traefik.http.routers.pihole.entrypoints: ${ENTRYPOINT:-websecure}
-        traefik.http.routers.pihole.rule: Host(`${DOMAIN:-pihole.localhost}`)
+        traefik.http.routers.pihole.rule: Host(`${DOMAIN:-pihole.host.local}`)
         traefik.http.routers.pihole.service: pihole
         traefik.http.services.pihole.loadbalancer.server.port: 80
 

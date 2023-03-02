@@ -19,7 +19,7 @@ services:
       labels:
         traefik.enable: "true"
         traefik.http.routers.whoami.entrypoints: ${ENTRYPOINT:-websecure}
-        traefik.http.routers.whoami.rule: Host(`${DOMAIN:-whoami.localhost}`)
+        traefik.http.routers.whoami.rule: Host(`${DOMAIN:-whoami.host.local}`)
         traefik.http.routers.whoami.service: whoami
         traefik.http.services.whoami.loadbalancer.server.port: 80
 

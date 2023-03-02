@@ -51,7 +51,7 @@ services:
       labels:
         traefik.enable: "true"
         traefik.http.routers.ldap-admin.entrypoints: ${ADMIN_ENTRYPOINT:-websecure}
-        traefik.http.routers.ldap-admin.rule: Host(`${ADMIN_DOMAIN:-ldap-admin.localhost}`)
+        traefik.http.routers.ldap-admin.rule: Host(`${ADMIN_DOMAIN:-ldap-admin.host.local}`)
         traefik.http.routers.ldap-admin.service: ldap-admin
         traefik.http.services.ldap-admin.loadbalancer.server.port: 80
 

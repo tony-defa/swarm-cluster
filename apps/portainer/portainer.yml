@@ -51,7 +51,7 @@ services:
       labels:
         traefik.enable: "true"
         traefik.http.routers.portainer.entrypoints: ${ENTRYPOINT:-websecure}
-        traefik.http.routers.portainer.rule: Host(`${DOMAIN:-portainer.localhost}`)
+        traefik.http.routers.portainer.rule: Host(`${DOMAIN:-portainer.host.local}`)
         traefik.http.routers.portainer.service: portainer
         traefik.http.services.portainer.loadbalancer.server.port: 9000
 

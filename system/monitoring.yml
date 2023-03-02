@@ -30,7 +30,7 @@ services:
       labels:
         traefik.enable: "true"
         traefik.http.routers.prometheus.entrypoints: ${PROMETHEUS_ENTRYPOINT:-websecure}
-        traefik.http.routers.prometheus.rule: Host(`${PROMETHEUS_DOMAIN:-prometheus.localhost}`)
+        traefik.http.routers.prometheus.rule: Host(`${PROMETHEUS_DOMAIN:-prometheus.host.local}`)
         traefik.http.routers.prometheus.service: prometheus
         traefik.http.services.prometheus.loadbalancer.server.port: 9090
 
@@ -50,7 +50,7 @@ services:
       labels:
         traefik.enable: "true"
         traefik.http.routers.grafana.entrypoints: ${GRAFANA_ENTRYPOINT:-websecure}
-        traefik.http.routers.grafana.rule: Host(`${GRAFANA_DOMAIN:-grafana.localhost}`)
+        traefik.http.routers.grafana.rule: Host(`${GRAFANA_DOMAIN:-grafana.host.local}`)
         traefik.http.routers.grafana.service: grafana
         traefik.http.services.grafana.loadbalancer.server.port: 3000
 
@@ -72,7 +72,7 @@ services:
       labels:
         traefik.enable: "true"
         traefik.http.routers.alertmanager.entrypoints: ${ALERTMANAGER_ENTRYPOINT:-websecure}
-        traefik.http.routers.alertmanager.rule: Host(`${ALERTMANAGER_DOMAIN:-alertmanager.localhost}`)
+        traefik.http.routers.alertmanager.rule: Host(`${ALERTMANAGER_DOMAIN:-alertmanager.host.local}`)
         traefik.http.routers.alertmanager.service: alertmanager
         traefik.http.services.alertmanager.loadbalancer.server.port: 9093
 

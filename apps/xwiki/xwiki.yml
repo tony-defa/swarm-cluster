@@ -34,7 +34,7 @@ services:
       labels:
         traefik.enable: "true"
         traefik.http.routers.xwiki.entrypoints: ${ENTRYPOINT:-websecure}
-        traefik.http.routers.xwiki.rule: Host(`${DOMAIN:-xwiki.localhost}`)
+        traefik.http.routers.xwiki.rule: Host(`${DOMAIN:-xwiki.host.local}`)
         traefik.http.routers.xwiki.service: xwiki
         traefik.http.services.xwiki.loadbalancer.server.port: 8080
 

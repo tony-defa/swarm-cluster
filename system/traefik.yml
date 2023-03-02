@@ -123,7 +123,7 @@ services:
       labels:
         traefik.enable: "true"
         traefik.http.routers.traefik.entrypoints: ${TRAEFIK_ENTRYPOINT:-websecure}
-        traefik.http.routers.traefik.rule: Host(`${TRAEFIK_DOMAIN:-traefik.localhost}`)
+        traefik.http.routers.traefik.rule: Host(`${TRAEFIK_DOMAIN:-traefik.host.local}`)
         traefik.http.routers.traefik.service: traefik
         traefik.http.services.traefik.loadbalancer.server.port: 8080
 
