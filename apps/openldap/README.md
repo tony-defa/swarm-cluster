@@ -3,7 +3,7 @@
 OpenLDAP Software is an open source implementation of the Lightweight Directory Access Protocol. 
 
 ### `openldap.yml`
-Contains OpenLDAP, a WebUI and data backup from [osixia](https://hub.docker.com/u/osixia). 
+Contains OpenLDAP, a WebUI, Self-Service-Password (SSP) a UI that permits password changes and data backup from [osixia](https://hub.docker.com/u/osixia). 
 
 ## Perquisites
 ### Storage
@@ -13,7 +13,13 @@ A centralized storage solution is not required.
 There are no dependencies.
 
 ### Create pre-configured data folder
-No pre-configured data folder available.
+Copy the `example.ssp.conf.php` to create your custom SSP configuration.
+
+```sh
+$ cp example.ssp.conf.php .ssp.conf.php
+```
+
+Edit the newly created `.ssp.conf.php` file to fit your needs. See [Self-Service-Password Documentation](https://self-service-password.readthedocs.io/en/latest/index.html) for further information.
 
 ### Create docker secrets
 Create the following docker secrets to configure the startup passwords.

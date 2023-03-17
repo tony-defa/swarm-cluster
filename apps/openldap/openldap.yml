@@ -1,6 +1,8 @@
 version: '3.8'
 
 x-default-opts: &default-opts
+  env_file:
+    .env
   logging:
     options:
       max-size: "1m"
@@ -55,6 +57,28 @@ services:
         traefik.http.routers.ldap-admin.service: ldap-admin
         traefik.http.services.ldap-admin.loadbalancer.server.port: 80
 
+  self-service-password:
+    <<: *default-opts
+    image: ltbproject/self-service-password:${SELF_SERVICE_PASSWORD_TAG}
+    networks:
+      - ldap_network
+      - proxy_network
+    configs:
+      - source: ssp_config
+        target: /var/www/conf/config.inc.local.php
+    secrets:
+      - ldap_admin_password
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.self-service-password.entrypoints: ${SSP_ENTRYPOINT:-websecure}
+        traefik.http.routers.self-service-password.rule: Host(`$SSP_DOMAIN:-ssp.host.local}`)
+        traefik.http.routers.self-service-password.service: self-service-password
+        traefik.http.services.self-service-password.loadbalancer.server.port: 80
+
   openldap-backup:
     <<: *default-opts
     image: osixia/openldap-backup:${OPEN_LDAP_TAG}
@@ -80,6 +104,11 @@ secrets:
     external: true
   ldap_ro_user_password:
     external: true
+
+configs:
+  ssp_config:
+    file: ./.ssp.conf.php
+    name: ssp-conf-1
       
 networks:
   ldap_network:
