@@ -16,9 +16,9 @@ Mandatory stacks are:
 ### Create pre-configured data folder
 No pre-configured data folder available.
 
-> It is recommended to copy the original `forward-auth.yml` to a named `<name>-forward-auth.yml` version.
+> It is recommended to copy the original `forward-auth.yml` to a named `<name>.forward-auth.yml` version.
 > ```sh
-> $ cp forward-auth.yml customname-forward-auth.yml
+> $ cp forward-auth.yml override.forward-auth.yml
 > ```
 > Rules can be defined in the command section of the compose file.
 

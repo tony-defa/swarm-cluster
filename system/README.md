@@ -48,9 +48,9 @@ $ sudo ./create_alertmanager_data.sh
 This script works the same as the one for prometheus. See [Prometheus configuration](#prometheus-configuration)
 
 #### Traefik configuration
-> It is recommended to copy the original `traefik.yml` to a named `<name>-traefik.yml` version.
+> It is recommended to copy the original `traefik.yml` to a named `<name>.traefik.yml` version.
 > ```sh
-> $ cp traefik.yml customname-traefik.yml
+> $ cp traefik.yml override.traefik.yml
 > ```
 > The service as it is only contains proxying via http. For any other feature the service commands should be modified. 
 
