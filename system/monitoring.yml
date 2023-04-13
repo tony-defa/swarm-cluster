@@ -11,6 +11,26 @@ x-default-opts: &default-opts
     #   gelf-address: "udp://172.17.0.1:12201"
 
 services:
+  grafana:
+    <<: *default-opts
+    image: grafana/grafana-oss:${GRAFANA_TAG}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - metrics_network
+      - proxy_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.grafana.entrypoints: ${GRAFANA_ENTRYPOINT:-websecure}
+        traefik.http.routers.grafana.rule: Host(`${GRAFANA_DOMAIN:-grafana.host.local}`)
+        traefik.http.routers.grafana.service: grafana
+        traefik.http.services.grafana.loadbalancer.server.port: 3000
+
   prometheus:
     <<: *default-opts
     image: prom/prometheus:${PROMETHEUS_TAG}
@@ -34,26 +54,6 @@ services:
         traefik.http.routers.prometheus.service: prometheus
         traefik.http.services.prometheus.loadbalancer.server.port: 9090
 
-  grafana:
-    <<: *default-opts
-    image: grafana/grafana-oss:${GRAFANA_TAG}
-    volumes:
-      - grafana_data:/var/lib/grafana
-    networks:
-      - metrics_network
-      - proxy_network
-    deploy:
-      mode: replicated
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-      labels:
-        traefik.enable: "true"
-        traefik.http.routers.grafana.entrypoints: ${GRAFANA_ENTRYPOINT:-websecure}
-        traefik.http.routers.grafana.rule: Host(`${GRAFANA_DOMAIN:-grafana.host.local}`)
-        traefik.http.routers.grafana.service: grafana
-        traefik.http.services.grafana.loadbalancer.server.port: 3000
-
   alertmanager:
     <<: *default-opts
     image: prom/alertmanager:${ALERTMANAGER_TAG}
@@ -64,6 +64,7 @@ services:
       - proxy_network
     command:
       - --config.file=/etc/alertmanager/alertmanager.yml
+      - --web.external-url=${ALERTMANAGER_EXTERNAL_URL:-http://alertmanager.host.local}
     deploy:
       mode: replicated
       replicas: 1
