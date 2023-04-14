@@ -11,16 +11,16 @@ x-default-opts: &default-opts
     #   gelf-address: "udp://172.17.0.1:12201"
 
 services:
-  wordpress:
+  web:
     <<: *default-opts
     image: wordpress:${WORDPRESS_TAG}
     networks:
       - proxy_network
       - wp_network
     volumes:
-      - wordpress_data:/var/www/html
+      - data:/var/www/html
     environment:
-      - WORDPRESS_DB_HOST=wordpress-db
+      - WORDPRESS_DB_HOST=db
       - WORDPRESS_DB_NAME=${DB_NAME}
       - WORDPRESS_DB_USER=${DB_USER}
       - WORDPRESS_DB_PASSWORD=${DB_PASSWORD}
@@ -36,13 +36,13 @@ services:
         traefik.http.routers.wordpress.service: wordpress
         traefik.http.services.wordpress.loadbalancer.server.port: 80
 
-  wordpress-db:
+  db:
     <<: *default-opts
     image: mariadb:${MARIADB_TAG}
     networks:
       - wp_network
     volumes:
-      - wordpress_db:/var/lib/mysql
+      - db:/var/lib/mysql
     environment:
       - MYSQL_DATABASE=${DB_NAME}
       - MYSQL_USER=${DB_USER}
@@ -53,7 +53,7 @@ services:
       restart_policy:
         condition: on-failure
 
-  wordpress-backup:
+  backup:
     <<: *default-opts
     image: mariadb:${MARIADB_TAG}
     command: 
@@ -64,16 +64,16 @@ services:
         while true; do
           sleep $$BACKUP_FREQUENCY;
           backup_dir=/backup/wordpress_$$(date +'%Y%m%d_%H%M%S');
-          mkdir -p $$backup_dir/data;
+          mkdir -p $$backup_dir;
           echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of WordPress data including SQL dump of $$DB_NAME database...";
-          /usr/bin/mysqldump -u $$DB_USER --password=$$DB_PASSWORD --host=wordpress-db --databases $$DB_NAME --no-tablespaces > $$backup_dir/db.sql;
-          cp -r /data/* $$backup_dir/data/.;
+          /usr/bin/mysqldump -u $$DB_USER --password=$$DB_PASSWORD --host=db --databases $$DB_NAME --no-tablespaces > $$backup_dir/db.sql;
+          tar -C /data/ -cvzf $$backup_dir/data.tar.gz .;
           find /backup/wordpress_* -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
           echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in $$BACKUP_FREQUENCY.";
         done
     volumes:
-      - wordpress_backup:/backup
-      - wordpress_data:/data
+      - backup:/backup
+      - data:/data
     networks:
       - wp_network
     deploy:
@@ -89,7 +89,7 @@ networks:
     driver: overlay
 
 volumes:
-  wordpress_data:
+  data:
     driver: local
     driver_opts:
       device: ${HOST_WORDPRESS_DATA}
@@ -99,7 +99,7 @@ volumes:
       # type: nfs
       # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
 
-  wordpress_db:
+  db:
     driver: local
     driver_opts:
       device: ${HOST_WORDPRESS_DB}
@@ -109,7 +109,7 @@ volumes:
       # type: nfs
       # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
 
-  wordpress_backup:
+  backup:
     driver: local
     driver_opts:
       device: ${HOST_WORDPRESS_BACKUP}
