@@ -10,31 +10,31 @@ groups:
       summary: "Endpoint {{ $labels.instance }} down"
       description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 1 minutes."
   
-  - alert: HostOutOfMemory
-    expr: node_memory_MemAvailable / node_memory_MemTotal * 100 < 25
+  - alert: HostLowOnMemory
+    expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 25
     for: 5m
     labels:
       severity: warning
     annotations:
-      summary: "Host out of memory (instance {{ $labels.instance }})"
+      summary: "Host is low on memory (instance {{ $labels.instance }})"
       description: "Node memory is filling up (< 25% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
 
 
-  - alert: HostOutOfDiskSpace
-    expr: (node_filesystem_avail{mountpoint="/"}  * 100) / node_filesystem_size{mountpoint="/"} < 50
+  - alert: HostLowOfDiskSpace
+    expr: (node_filesystem_avail_bytes{mountpoint="/"} * 100) / node_filesystem_size_bytes{mountpoint="/"} < 50
     for: 1s
     labels:
       severity: warning
     annotations:
-      summary: "Host out of disk space (instance {{ $labels.instance }})"
+      summary: "Host is low on disk space (instance {{ $labels.instance }})"
       description: "Disk is almost full (< 50% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
 
 
   - alert: HostHighCpuLoad
-    expr: (sum by (instance) (irate(node_cpu{job="node_exporter_metrics",mode="idle"}[5m]))) > 80
+    expr: avg by (instance) (irate(node_cpu_seconds_total{job="node",mode="idle"}[1m]) * 100) < 25
     for: 5m
     labels:
       severity: warning
     annotations:
       summary: "Host high CPU load (instance {{ $labels.instance }})"
-      description: "CPU load is > 80%\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "CPU load is > 75%\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"

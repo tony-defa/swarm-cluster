@@ -36,5 +36,9 @@ scrape_configs:
     - targets: ['reverse-proxy:8082']
 
   - job_name: node
-    static_configs:
-    - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+    dns_sd_configs:
+      - names:
+          - 'tasks.node-exporter'
+        type: 'A'
+        port: 9100

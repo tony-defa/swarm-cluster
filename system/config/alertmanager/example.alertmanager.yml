@@ -3,7 +3,9 @@ global:
 
   # The smarthost and SMTP sender used for mail notifications.
   smtp_smarthost: 'smtp.example.com:587'
-  smtp_from: 'Alertmanager <alertmanager@example.com>'
+  smtp_auth_username: user
+  smtp_auth_password: password
+  smtp_require_tls: true
 
 route:
   receiver: 'email-notifications'
@@ -12,6 +14,5 @@ receivers:
 - name: 'email-notifications'
   email_configs:
   - to: 'yourmail@example.com' 
-    from: 'alertmanager@example.com'
-    require_tls: false
+    from: 'Alertmanager <alertmanager@example.com>'
     send_resolved: true
