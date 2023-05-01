@@ -1,0 +1,52 @@
+version: '3.9'
+
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+
+services:
+  vaultwarden:
+    <<: *default-opts
+    image: vaultwarden/server:${VAULTWARDEN_TAG}
+    volumes:
+      - data:/data
+      - config:/config
+    networks:
+      - proxy_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.vaultwarden.entrypoints: ${VAULTWARDEN_ENTRYPOINT:-websecure}
+        traefik.http.routers.vaultwarden.rule: Host(`${VAULTWARDEN_DOMAIN:-vaultwarden.host.local}`)
+        traefik.http.routers.vaultwarden.service: vaultwarden
+        traefik.http.services.vaultwarden.loadbalancer.server.port: 80
+        traefik.http.routers.vaultwarden-websocket.entrypoints: ${VAULTWARDEN_ENTRYPOINT:-websecure}
+        traefik.http.routers.vaultwarden-websocket.rule: Host(`${VAULTWARDEN_DOMAIN:-vaultwarden.host.local}`) && Path(`/notifications/hub`)
+        traefik.http.routers.vaultwarden-websocket.service: vaultwarden-websocket
+        traefik.http.services.vaultwarden-websocket.loadbalancer.server.port: 3012
+
+networks:
+  proxy_network:
+    external: true
+
+volumes:
+  data:
+    driver: local
+    driver_opts:
+      device: ${HOST_VAULTWARDEN_DATA}
+      type: none
+      o: bind
+
+  config:
+    driver: local
+    driver_opts:
+      device: ${HOST_VAULTWARDEN_CONFIG}
+      type: none
+      o: bind
