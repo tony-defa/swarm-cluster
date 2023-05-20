@@ -53,12 +53,14 @@ services:
       # - --certificatesResolvers.letsencrypt.acme.keyType=EC384
       # - --certificatesResolvers.letsencrypt.acme.httpChallenge.entryPoint=web
 
-      ## DNS Challenge (Linode)
-      # - --entryPoints.websecure.http.tls.certResolver=linode-dnschallenge
+      ## DNS Challenge (provider agnostic)
       # - --entryPoints.websecure.http.tls.domains[0].main=${EXTERNAL_DOMAIN?Variable not set}
       # - --entryPoints.websecure.http.tls.domains[0].sans=*.${EXTERNAL_DOMAIN?Variable not set}
       # - --entryPoints.websecure.http.tls.domains[1].main=${INTERNAL_DOMAIN?Variable not set}
       # - --entryPoints.websecure.http.tls.domains[1].sans=*.${INTERNAL_DOMAIN?Variable not set}
+
+      ## DNS Challenge (Linode)
+      # - --entryPoints.websecure.http.tls.certResolver=linode-dnschallenge
       # - --certificatesResolvers.linode-dnschallenge.acme.dnschallenge=true
       # - --certificatesResolvers.linode-dnschallenge.acme.dnschallenge.provider=linode
       # - --certificatesResolvers.linode-dnschallenge.acme.email=${LE_ACME_EMAIL?Variable not set}
@@ -66,14 +68,17 @@ services:
 
       ## DNS Challenge (allinkl)
       # - --entryPoints.websecure.http.tls.certResolver=allinkl-dnschallenge
-      # - --entryPoints.websecure.http.tls.domains[0].main=${EXTERNAL_DOMAIN?Variable not set}
-      # - --entryPoints.websecure.http.tls.domains[0].sans=*.${EXTERNAL_DOMAIN?Variable not set}
-      # - --entryPoints.websecure.http.tls.domains[1].main=${INTERNAL_DOMAIN?Variable not set}
-      # - --entryPoints.websecure.http.tls.domains[1].sans=*.${INTERNAL_DOMAIN?Variable not set}
       # - --certificatesResolvers.allinkl-dnschallenge.acme.dnschallenge=true
       # - --certificatesResolvers.allinkl-dnschallenge.acme.dnschallenge.provider=allinkl
       # - --certificatesResolvers.allinkl-dnschallenge.acme.email=${LE_ACME_EMAIL?Variable not set}
       # - --certificatesResolvers.allinkl-dnschallenge.acme.storage=/data/acme.json
+
+      ## DNS Challenge (hetzner)
+      # - --entryPoints.websecure.http.tls.certResolver=hetzner-dnschallenge
+      # - --certificatesResolvers.hetzner-dnschallenge.acme.dnschallenge=true
+      # - --certificatesResolvers.hetzner-dnschallenge.acme.dnschallenge.provider=hetzner
+      # - --certificatesResolvers.hetzner-dnschallenge.acme.email=${LE_ACME_EMAIL?Variable not set}
+      # - --certificatesResolvers.hetzner-dnschallenge.acme.storage=/data/acme.json
 
       # Prometheus configuration
       - --metrics.prometheus=true
@@ -95,6 +100,12 @@ services:
     # environment:
     #   - ALL_INKL_LOGIN_FILE=/run/secrets/all_inkl_login
     #   - ALL_INKL_PASSWORD_FILE=/run/secrets/all_inkl_password
+
+    ## Hetzner secrets
+    # secrets:
+    #   - hetzner_dns_token
+    # environment:
+    #   - HETZNER_API_KEY_FILE=/run/secrets/hetzner_dns_token
     
     networks:
       - proxy_network
@@ -144,6 +155,11 @@ networks:
 #   all_inkl_login:
 #     external: true
 #   all_inkl_password:
+#     external: true
+
+## Hetzner secrets
+# secrets:
+#   hetzner_dns_token:
 #     external: true
 
 volumes:
