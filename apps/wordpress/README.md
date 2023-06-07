@@ -24,3 +24,7 @@ No network needs to be created.
 
 ## Other notes
 No notes
+
+
+cat example.view.json | jq '. | with_entries(select(.key | startswith("host_")))'
+cat example.view.json | jq -r '. | to_entries[] | select(.key | startswith("host_")) | .value'
