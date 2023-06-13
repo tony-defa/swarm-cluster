@@ -34,9 +34,9 @@ services:
       - data:/var/www/html
     environment:
       - WORDPRESS_DB_HOST=db
-      - WORDPRESS_db_name={{db_name}}
-      - WORDPRESS_db_user={{db_user}}
-      - WORDPRESS_db_password={{db_password}}
+      - WORDPRESS_DB_NAME={{db_name}}
+      - WORDPRESS_DB_USER={{db_user}}
+      - WORDPRESS_DB_PASSWORD={{db_password}}
     deploy:
       mode: replicated
       replicas: 1
