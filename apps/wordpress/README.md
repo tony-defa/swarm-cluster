@@ -26,5 +26,5 @@ No network needs to be created.
 No notes
 
 
-cat example.view.json | jq '. | with_entries(select(.key | startswith("host_")))'
-cat example.view.json | jq -r '. | to_entries[] | select(.key | startswith("host_")) | .value'
+cat .view.json | jq -r '. | to_entries[] | select(.key | startswith("host_")) | .value' | xargs sudo mkdir -p
+cat .view.json | jq -r '. | to_entries[] | select(.key | startswith("host_")) | .value' | xargs sudo chown -R :docker
