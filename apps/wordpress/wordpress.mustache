@@ -1,8 +1,10 @@
 version: '3.8'
 
 x-default-opts: &default-opts
+  {{#env_file}}
   env_file:
-    .env
+    {{env_file}}
+  {{/env_file}}
   logging:
   {{^gelf_address}}
     options:
