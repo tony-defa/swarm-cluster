@@ -17,7 +17,7 @@
     "__comment4": "Proxy configuration",
     "service_name": "test",
     "entrypoint": "",
-    "domain": "",
+    "routing_rule": "Host(`wordpress.host.local`)",
 
     "__comment5": "Port configuration",
     "publish_ports": false,
