@@ -47,7 +47,7 @@ services:
       labels:
         traefik.enable: "true"
         traefik.http.routers.wp-{{service_name}}.entrypoints: {{#entrypoint}}{{entrypoint}}{{/entrypoint}}{{^entrypoint}}websecure{{/entrypoint}}
-        traefik.http.routers.wp-{{service_name}}.rule: {{#routing_rule}}{{routing_rule}}{{/routing_rule}}{{^routing_rule}}Host(`wordpress.host.local`){{/routing_rule}}
+        traefik.http.routers.wp-{{service_name}}.rule: {{#routing_rule}}{{{routing_rule}}}{{/routing_rule}}{{^routing_rule}}Host(`wordpress.host.local`){{/routing_rule}}
         traefik.http.routers.wp-{{service_name}}.service: wp-{{service_name}}
         traefik.http.services.wp-{{service_name}}.loadbalancer.server.port: 80
 
