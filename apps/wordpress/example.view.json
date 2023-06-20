@@ -5,27 +5,22 @@
     "host_data": "/cluster/wordpress_data/data",
     "host_backup": "/cluster/wordpress_data/backup",
 
-    "__comment2": "DB Connection",
-    "db_name": "exampledb1",
-    "db_user": "exampleuser1",
-    "db_password": "examplepass1",
-
-    "__comment3": "Image tags",
+    "__comment2": "Image tags",
     "wordpress_tag": "5.9-apache",
     "mariadb_tag": "10.7",
 
-    "__comment4": "Proxy configuration",
+    "__comment3": "Proxy configuration",
     "service_name": "test",
     "entrypoint": "",
     "routing_rule": "Host(`wordpress.host.local`)",
 
-    "__comment5": "Port configuration",
+    "__comment4": "Port configuration",
     "publish_ports": false,
     "ports": [
         {"target": 80, "published": 8080, "protocol": "tcp", "mode": "host"}
     ],
 
-    "__comment6": "Other configuration",
+    "__comment5": "Other configuration",
     "env_file": "example.env",
     "nfs_share_ip": "",
     "gelf_address": ""
