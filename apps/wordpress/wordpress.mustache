@@ -77,7 +77,6 @@ services:
       - | 
         echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed in $$BACKUP_FREQUENCY.";
         while true; do
-          sleep $$BACKUP_FREQUENCY;
           backup_dir=/backup/wp-{{service_name}}_$$(date +'%Y%m%d_%H%M%S');
           mkdir -p $$backup_dir;
           echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of WordPress data including SQL dump of $$DB_NAME database...";
@@ -85,6 +84,7 @@ services:
           tar -C /data/ -cvzf $$backup_dir/data.tar.gz .;
           find /backup/wp-{{service_name}}_* -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
           echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in $$BACKUP_FREQUENCY.";
+          sleep $$BACKUP_FREQUENCY;
         done
     volumes:
       - backup:/backup
