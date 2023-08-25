@@ -35,6 +35,7 @@ services:
         limits:
           memory: 1g
     networks:
+      - proxy_network
       - es_internal
       - elastic_network
     deploy:
@@ -56,6 +57,7 @@ services:
     environment:
       ELASTICSEARCH_URL: http://elasticsearch:9200
     networks:
+      - proxy_network
       - es_internal
     deploy:
       replicas: 1
@@ -76,6 +78,9 @@ networks:
     driver: overlay
 
   elastic_network:
+    external: true
+
+  proxy_network:
     external: true
 
 volumes:
