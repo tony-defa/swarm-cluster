@@ -46,10 +46,10 @@ services:
         condition: on-failure
       labels:
         traefik.enable: "true"
-        traefik.http.routers.kibana.entrypoints: ${ES_ENTRYPOINT:-websecure}
-        traefik.http.routers.kibana.rule: Host(`${KIBANA_DOMAIN?Variable not set}`)
-        traefik.http.routers.kibana.service: kibana
-        traefik.http.services.kibana.loadbalancer.server.port: 9200
+        traefik.http.routers.elasticsearch.entrypoints: ${ES_ENTRYPOINT:-websecure}
+        traefik.http.routers.elasticsearch.rule: Host(`${ES_DOMAIN?Variable not set}`)
+        traefik.http.routers.elasticsearch.service: elasticsearch
+        traefik.http.services.elasticsearch.loadbalancer.server.port: 9200
 
   kibana:
     image: docker.elastic.co/kibana/kibana:${KIBANA_TAG}
