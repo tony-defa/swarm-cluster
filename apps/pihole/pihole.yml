@@ -13,7 +13,7 @@ services:
     image: pihole/pihole:${PIHOLE_TAG}
     volumes:
       - pihole_data:/etc/pihole/
-      - pihole_dnsmasq:/etc/dns::asq.d/
+      - pihole_dnsmasq:/etc/dnsmasq.d/
     configs:
       - source: resolv
         target: /etc/resolv.conf

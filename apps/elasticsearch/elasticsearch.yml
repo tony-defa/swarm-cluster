@@ -1,0 +1,87 @@
+version: "3.8"
+
+x-default-opts: &default-opts
+  env_file: .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://172.17.0.1:12201"
+
+services:
+  # Elasticsearch: https://www.elastic.co/guide/en/elasticsearch/reference/8.9/docker.html
+  elasticsearch:
+    <<: *default-opts
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_TAG}
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    environment:
+      # Added empty variable to make sure that elasticsearch will take ownership of the files on startup.
+      # Omitting this will cause an error, when the persisted files were moved or the volume was recreated.
+      - TAKE_FILE_OWNERSHIP=;
+      - http.host=0.0.0.0
+      - transport.host=localhost
+      - network.host=0.0.0.0
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m -Dlog4j2.formatMsgNoLookups=true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    networks:
+      - es_internal
+      - elastic_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 60s
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.kibana.entrypoints: ${ES_ENTRYPOINT:-websecure}
+        traefik.http.routers.kibana.rule: Host(`${KIBANA_DOMAIN?Variable not set}`)
+        traefik.http.routers.kibana.service: kibana
+        traefik.http.services.kibana.loadbalancer.server.port: 9200
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${KIBANA_TAG}
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    networks:
+      - es_internal
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 60s
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.kibana.entrypoints: ${KIBANA_ENTRYPOINT:-websecure}
+        traefik.http.routers.kibana.rule: Host(`${KIBANA_DOMAIN?Variable not set}`)
+        traefik.http.routers.kibana.service: kibana
+        traefik.http.services.kibana.loadbalancer.server.port: 5601
+
+networks:
+  es_internal:
+    driver: overlay
+
+  elastic_network:
+    external: true
+
+volumes:
+  es_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_ELASTICSEARCH_DATA}
+      type: none
+      o: bind
