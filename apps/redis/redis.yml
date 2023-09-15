@@ -1,0 +1,65 @@
+version: "3.8"
+
+x-default-opts: &default-opts
+  env_file: .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://172.17.0.1:12201"
+
+services:
+  redis:
+    <<: *default-opts
+    image: redis:${REDIS_TAG}
+    volumes:
+      - redis_data:/data
+    networks:
+      - redis_internal
+      - redis_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 60s
+      restart_policy:
+        condition: on-failure
+
+  insight:
+    <<: *default-opts
+    image: redislabs/redisinsight:${INSIGHT_TAG}
+    networks:
+      - redis_internal
+      - proxy_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 60s
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.insight.entrypoints: ${INSIGHT_ENTRYPOINT:-websecure}
+        traefik.http.routers.insight.rule: Host(`${INSIGHT_DOMAIN?Variable not set}`)
+        traefik.http.routers.insight.service: insight
+        traefik.http.services.insight.loadbalancer.server.port: 8001
+
+networks:
+  redis_internal:
+    driver: overlay
+
+  proxy_network:
+    external: true
+
+  redis_network:
+    external: true
+
+volumes:
+  redis_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_REDIS_DATA}
+      type: none
+      o: bind
