@@ -10,7 +10,8 @@ Contains a single elasticsearch node and kibana as a separate service.
 A centralized storage solution is required.
 
 ### Service dependencies
-There are no dependencies.
+Mandatory stacks are:
+- `system/traefik.yml`
 
 ### Create pre-configured data folder
 No pre-configured data folder available.

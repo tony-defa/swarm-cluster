@@ -75,6 +75,9 @@ networks:
   es_internal:
     driver: overlay
 
+  proxy_network:
+    external: true
+
   elastic_network:
     external: true
 
