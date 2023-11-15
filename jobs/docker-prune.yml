@@ -35,6 +35,19 @@ services:
       restart_policy:
         condition: on-failure
 
+  volume-prune:
+    <<: *default-opts
+    image: docker
+    command: sh -c "while true; do docker volume rm $$(docker volume ls -qf dangling=true); sleep 86400; done"
+    networks:
+      - bridge
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+
 networks:
   bridge:
     external: true
