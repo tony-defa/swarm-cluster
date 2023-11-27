@@ -153,6 +153,7 @@ services:
           echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Processing slave host with IP '$$ip' completed."
         done
 
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] All slaves are up to date."
         rm "/tmp/$$NEWEST_DUMP"
     deploy:
       update_config:
