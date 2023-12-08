@@ -1,0 +1,27 @@
+watch:
+  workers: 4
+  schedule: "5 5 * * 2"
+  jitter: 30s
+  runOnStartup: true
+  compareDigest: true
+
+providers:
+  swarm:
+    watchByDefault: true
+    endpoint: "unix:///var/run/docker.sock"
+
+notif:
+  mail:
+    host: localhost
+    port: 25
+    username: user
+    password: s3cr3t
+    ssl: false
+    insecureSkipVerify: false
+    from: diun@example.com
+    to:
+      - webmaster@example.com
+      - me@example.com
+    templateTitle: "{{ .Entry.Image }} released"
+    templateBody: |
+      Docker tag {{ .Entry.Image }} which you subscribed to through {{ .Entry.Provider }} provider has been released.
