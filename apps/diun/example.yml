@@ -1,5 +1,5 @@
 watch:
-  workers: 4
+  workers: 10
   schedule: "5 5 * * 2"
   jitter: 30s
   runOnStartup: true
