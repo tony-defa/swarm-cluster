@@ -1,0 +1,37 @@
+version: '3.8'
+
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+ 
+services:
+  mosquitto:
+    <<: *default-opts
+    image: eclipse-mosquitto:${MOSQUITTO_TAG}
+    volumes:
+      - mosquitto_data:/mosquitto/data
+    configs:
+      - source: mosquitto_config
+        target: /mosquitto/config/mosquitto.conf
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    deploy:
+      mode: replicated
+      replicas: 1
+
+configs:
+  mosquitto_config:
+    file: ./.conf
+    name: mosquitto-conf-1
+
+volumes:
+  mosquitto_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_MOSQUITTO_DATA}
+      type: none
+      o: bind
