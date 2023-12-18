@@ -1,0 +1,30 @@
+version: '3.8'
+
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+ 
+services:
+  diun:
+    <<: *default-opts
+    image: crazymax/diun:${DIUN_TAG}
+    command: serve
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    configs:
+      - source: diun_config
+        target: /etc/diun/diun.yml
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+configs:
+  diun_config:
+    file: ./.yml
+    name: diun-config-1

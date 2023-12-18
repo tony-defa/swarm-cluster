@@ -3,12 +3,12 @@ groups:
   rules:
   - alert: InstanceDown
     expr: up == 0
-    for: 1m
+    for: 15s
     labels:
       severity: "critical"
     annotations:
       summary: "Endpoint {{ $labels.instance }} down"
-      description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 1 minutes."
+      description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 15 seconds."
   
   - alert: HostLowOnMemory
     expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 25

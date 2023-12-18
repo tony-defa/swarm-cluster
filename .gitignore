@@ -4,6 +4,7 @@
 /**/override.*.yml
 .*
 !.gitignore
+!.gitkeep
 
 # Created by https://www.toptal.com/developers/gitignore/api/linux,windows,macos,eclipse,visualstudiocode,intellij
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux,windows,macos,eclipse,visualstudiocode,intellij

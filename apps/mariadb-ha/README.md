@@ -36,8 +36,15 @@ $ docker network create -d overlay mariadb_ha_network
 
 ## Other notes
 ### Backup 
-The backup service uses `mysqldump` to dump the database to a file. The dump interval is defined in the environment variable `BACKUP_FREQUENCY`. The files are kept for `RETENTION_DAYS` while older files will be deleted automatically.
+The backup service uses `mariadb-dump` to dump the database to a file. The dump interval is defined in the environment variable `BACKUP_FREQUENCY`. The files are kept for `RETENTION_DAYS` while older files will be deleted automatically.
+
+The dump is generated with the `--master-data=2` option. This option will add the `CHANGE MASTER TO` statement (commented out) to the dump file. This statement can be used to restore the slave service after a restart when uncommented.
+> The user defined in `mariadb_ha_user` is given the `RELOAD` and `BINLOG MONITOR` privilege to allow the user to execute the `CHANGE MASTER TO` statement. This is done automatically on startup of the master service.
 
 ### Restore 
 To restore a backup simply deploy the `mariadb` stack with an empty data volume. After that follow the instruction from the official documentation: https://mariadb.com/kb/en/restoring-data-from-dump-files/
 > Use the `docker exec -t <service_name> ...` command to execute the restore command.
+
+### `slave-init` Service
+The `slave-init` companion service is used to initialize the slave service on restart and on update. It will wait for each slave replica to be ready and then execute the latest dump (if available) from the backup folder, while uncommenting the `CHANGE MASTER TO` statement. After that the slave is restarted and the `slave-init` service is completed.
+> Known Issue: The `slave-init` service will not start nor be executed when the slave service is scaled down or up. This is due to the fact that the `slave-init` service is not restarted when the slave service is scaled down or up.

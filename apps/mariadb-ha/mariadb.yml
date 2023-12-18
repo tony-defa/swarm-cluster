@@ -16,6 +16,7 @@ services:
     image: bitnami/mariadb:${MARIADB_TAG}
     volumes:
       - mariadb_ha_data:/bitnami/mariadb
+      - ./entrypoint.d:/docker-entrypoint-startdb.d:ro
     secrets:
       - mariadb_ha_database
       - mariadb_ha_user
@@ -41,7 +42,7 @@ services:
       restart_policy:
         condition: on-failure
 
-  db-slave:
+  slave:
     <<: *default-opts
     image: bitnami/mariadb:${MARIADB_TAG}
     secrets:
@@ -60,14 +61,16 @@ services:
     deploy:
       replicas: 1
       update_config:
-        parallelism: 1
+        parallelism: 0
         delay: 10s
       restart_policy:
         condition: on-failure
 
-  db-backup:
+  backup:
     <<: *default-opts
     image: bitnami/mariadb:${MARIADB_TAG}
+    volumes:
+      - mariadb_ha_data:/bitnami/mariadb
     secrets:
       - mariadb_ha_database
       - mariadb_ha_user
@@ -84,20 +87,79 @@ services:
           DB_PASSWORD=$$(cat /run/secrets/mariadb_ha_db_password);
           backup_dir=/bitnami/mariadb/backup;
           mkdir -p $$backup_dir;
-          printenv
           echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating SQL dump of $$DB_NAME database..."
-          /opt/bitnami/mariadb/bin/mysqldump -u $$DB_USER --password=$$DB_PASSWORD --host=db --databases $$DB_NAME --no-tablespaces > $$backup_dir/db_$$(date +'%Y%m%d_%H%M%S').sql;
+          /opt/bitnami/mariadb/bin/mariadb-dump -u $$DB_USER --password=$$DB_PASSWORD --host=db --databases $$DB_NAME --master-data=2 --no-tablespaces > $$backup_dir/db_$$(date +'%Y%m%d_%H%M%S').sql;
           find $$backup_dir -iname "db_*.sql" -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
           echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next dump in $$BACKUP_FREQUENCY.";
         done
-    volumes:
-      - mariadb_ha_data:/bitnami/mariadb
     networks:
       - mariadb_ha_network
     deploy:
       restart_policy:
         condition: on-failure
         delay: 600s
+
+  slave-init:
+    <<: *default-opts
+    image: bitnami/mariadb:${MARIADB_TAG}
+    user: root
+    volumes:
+      - mariadb_ha_data:/master/data:ro
+    secrets:
+      - mariadb_ha_database
+      - mariadb_ha_root_password
+    networks:
+      - mariadb_ha_network
+    command:
+      - bash
+      - -c
+      - | 
+        apt update && apt --no-install-recommends install netcat -y && rm -rf /var/lib/apt/lists/*;
+
+        BACKUP_DIR="/master/data/backup/";
+        NEWEST_DUMP=$$(ls -t $$BACKUP_DIR | head -1);
+
+        if [ -z "$$NEWEST_DUMP" ]; then
+          echo "No SQL dump file found in $$BACKUP_DIR";
+          exit 0;
+        fi
+
+        DB=$$(cat /run/secrets/mariadb_ha_database);
+        PW=$$(cat /run/secrets/mariadb_ha_root_password);
+
+        SLAVE_HOSTS=($$(getent hosts tasks.slave | awk '{ print $$1 }'));
+
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Found SQL dump file to restore: $$BACKUP_DIR$$NEWEST_DUMP";
+        sed '/^-- CHANGE MASTER TO/ s/^-- //' "$$BACKUP_DIR$$NEWEST_DUMP" > "/tmp/$$NEWEST_DUMP"
+
+        for ip in "$${SLAVE_HOSTS[@]}"; do
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Processing slave host with IP: $$ip"
+
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Wait for slave to be ready..."
+          while ! nc -z $$ip 3306; do
+            sleep 1;
+          done
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Slave ready. Proceeding..."
+
+          /opt/bitnami/mariadb/bin/mariadb -u root --password=$$PW -h $$ip -e \
+          "STOP SLAVE;
+          DROP DATABASE IF EXISTS $$DB;"
+
+          /opt/bitnami/mariadb/bin/mariadb -u root --password=$$PW -h $$ip < tmp/$$NEWEST_DUMP
+
+          /opt/bitnami/mariadb/bin/mariadb -u root --password=$$PW -h $$ip -e \
+          "START SLAVE;"
+          
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Processing slave host with IP '$$ip' completed."
+        done
+
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] All slaves are up to date."
+        rm "/tmp/$$NEWEST_DUMP"
+    deploy:
+      update_config:
+        delay: 10s
+      restart_policy:
+        condition: "none"
 
 secrets:
   mariadb_ha_database:
