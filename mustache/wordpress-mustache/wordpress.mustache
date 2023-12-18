@@ -1,0 +1,147 @@
+version: '3.8'
+
+x-default-opts: &default-opts
+  {{#env_file}}
+  env_file:
+    {{env_file}}
+  {{/env_file}}
+  logging:
+  {{^gelf_address}}
+    options:
+      max-size: "1m"
+  {{/gelf_address}}
+  {{#gelf_address}}
+    driver: "gelf"
+    options:
+      gelf-address: "{{{gelf_address}}}"
+  {{/gelf_address}}
+
+services:
+  web:
+    <<: *default-opts
+    image: wordpress:{{wordpress_tag}}
+    networks:
+      - proxy_network
+      - wp_network
+    {{#publish_ports}}
+    ports:
+    {{#ports}}
+      - target: {{target}}
+        published: {{published}}
+        protocol: {{protocol}}
+        mode: {{mode}}
+    {{/ports}}
+    {{/publish_ports}}
+    volumes:
+      - data:/var/www/html
+    environment:
+      - WORDPRESS_DB_HOST=db
+      - WORDPRESS_DB_NAME=${DB_NAME}
+      - WORDPRESS_DB_USER=${DB_USER}
+      - WORDPRESS_DB_PASSWORD=${DB_PASSWORD}
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.wp-{{service_name}}.entrypoints: {{#entrypoint}}{{entrypoint}}{{/entrypoint}}{{^entrypoint}}websecure{{/entrypoint}}
+        traefik.http.routers.wp-{{service_name}}.rule: {{#routing_rule}}{{{routing_rule}}}{{/routing_rule}}{{^routing_rule}}Host(`wordpress.host.local`){{/routing_rule}}
+        traefik.http.routers.wp-{{service_name}}.service: wp-{{service_name}}
+        traefik.http.services.wp-{{service_name}}.loadbalancer.server.port: 80
+
+  db:
+    <<: *default-opts
+    image: mariadb:{{mariadb_tag}}
+    networks:
+      - wp_network
+    volumes:
+      - db:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  backup:
+    <<: *default-opts
+    image: mariadb:{{mariadb_tag}}
+    command: 
+      - sh
+      - -c
+      - | 
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed in $$BACKUP_FREQUENCY.";
+        while true; do
+          backup_dir=/backup/wp-{{service_name}}_$$(date +'%Y%m%d_%H%M%S');
+          mkdir -p $$backup_dir;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of WordPress data including SQL dump of $$DB_NAME database...";
+          /usr/bin/mariadb-dump -u $$DB_USER --password=$$DB_PASSWORD --host=db --databases $$DB_NAME --no-tablespaces > $$backup_dir/db.sql;
+          tar -C /data/ -cvzf $$backup_dir/data.tar.gz .;
+          find /backup/wp-{{service_name}}_* -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in $$BACKUP_FREQUENCY.";
+          sleep $$BACKUP_FREQUENCY;
+        done
+    volumes:
+      - backup:/backup
+      - data:/data
+    networks:
+      - wp_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
+networks:
+  proxy_network:
+    external: true
+    
+  wp_network:
+    driver: overlay
+
+volumes:
+  data:
+    driver: local
+    driver_opts:
+    {{#nfs_share_ip}}
+      device: ":{{{host_data}}}"
+      type: nfs
+      o: addr={{nfs_share_ip}},rw,sync,nfsvers=4.1
+    {{/nfs_share_ip}}
+    {{^nfs_share_ip}}
+      device: {{{host_data}}}
+      type: none
+      o: bind
+    {{/nfs_share_ip}}
+
+  db:
+    driver: local
+    driver_opts:
+    {{#nfs_share_ip}}
+      device: ":{{{host_db}}}"
+      type: nfs
+      o: addr={{nfs_share_ip}},rw,sync,nfsvers=4.1
+    {{/nfs_share_ip}}
+    {{^nfs_share_ip}}
+      device: {{{host_db}}}
+      type: none
+      o: bind
+    {{/nfs_share_ip}}
+
+  backup:
+    driver: local
+    driver_opts:
+    {{#nfs_share_ip}}
+      device: ":{{{host_backup}}}"
+      type: nfs
+      o: addr={{nfs_share_ip}},rw,sync,nfsvers=4.1
+    {{/nfs_share_ip}}
+    {{^nfs_share_ip}}
+      device: {{{host_backup}}}
+      type: none
+      o: bind
+    {{/nfs_share_ip}}

@@ -15,6 +15,9 @@ This contains system relevant services.
 ### Apps 
 These are private or publicly obtained apps that add to the value of the cluster.
 
+### Mustache
+A tentative at making the stack files more dynamic by trying to create the stack file from a mustache template. This also allows to create multiple stacks from the same template.
+
 ### Jobs
 Tasks or jobs can be stored here.
 
@@ -37,7 +40,7 @@ Now the newly created file needs to be edited and configured according to the cl
 ### 2. Configured `HOST` paths
 
 The `.env`-file may contain paths that need to be created before the execution of the stack. These are variables that start with `HOST_`. To create these folders, run the following commands:
-No pre-configured data folder available.
+
 ```sh
 $ cd folder-of-interest/
 $ cat .env | grep "^HOST_[A-Z]" | cut -d'=' -f2 | xargs sudo mkdir -p

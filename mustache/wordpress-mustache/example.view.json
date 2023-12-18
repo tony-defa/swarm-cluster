@@ -1,0 +1,27 @@
+
+{
+    "__comment1": "Host volume paths",
+    "host_db": "/cluster/wordpress_data/db",
+    "host_data": "/cluster/wordpress_data/data",
+    "host_backup": "/cluster/wordpress_data/backup",
+
+    "__comment2": "Image tags",
+    "wordpress_tag": "5.9-apache",
+    "mariadb_tag": "10.7",
+
+    "__comment3": "Proxy configuration",
+    "service_name": "test",
+    "entrypoint": "",
+    "routing_rule": "Host(`wordpress.host.local`)",
+
+    "__comment4": "Port configuration",
+    "publish_ports": false,
+    "ports": [
+        {"target": 80, "published": 8080, "protocol": "tcp", "mode": "host"}
+    ],
+
+    "__comment5": "Other configuration",
+    "env_file": "example.env",
+    "nfs_share_ip": null,
+    "gelf_address": null
+}
