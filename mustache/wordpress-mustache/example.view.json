@@ -22,6 +22,6 @@
 
     "__comment5": "Other configuration",
     "env_file": "example.env",
-    "nfs_share_ip": "",
-    "gelf_address": ""
+    "nfs_share_ip": null,
+    "gelf_address": null
 }

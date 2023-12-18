@@ -2,8 +2,8 @@
 
 The WordPress rich content management system can utilize plugins, widgets, and themes.
 
-### `wordpress.yml`
-Contains both wordpress and the underling database. There is also a script, that backups the wp files and database tables.
+### `wordpress.mustache`
+The template contains both wordpress and the underling database. There is also a service, that backups the wp files and database tables.
 
 ## Perquisites
 ### Storage
@@ -24,7 +24,3 @@ No network needs to be created.
 
 ## Other notes
 No notes
-
-
-cat .view.json | jq -r '. | to_entries[] | select(.key | startswith("host_")) | .value' | xargs sudo mkdir -p
-cat .view.json | jq -r '. | to_entries[] | select(.key | startswith("host_")) | .value' | xargs sudo chown -R :docker
