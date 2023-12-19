@@ -90,6 +90,6 @@ volumes:
   backup:
     driver: local
     driver_opts:
-      device: ${HOST_XWIKI_DATA}
+      device: ${HOST_XWIKI_BACKUP}
       type: none
       o: bind
