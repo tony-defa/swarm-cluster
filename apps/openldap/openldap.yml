@@ -75,7 +75,7 @@ services:
       labels:
         traefik.enable: "true"
         traefik.http.routers.ldap-ssp.entrypoints: ${SSP_ENTRYPOINT:-websecure}
-        traefik.http.routers.ldap-ssp.rule: Host(`$SSP_DOMAIN:-ssp.host.local}`)
+        traefik.http.routers.ldap-ssp.rule: Host(`${SSP_DOMAIN:-ssp.host.local}`)
         traefik.http.routers.ldap-ssp.service: ldap-ssp
         traefik.http.services.ldap-ssp.loadbalancer.server.port: 80
 
