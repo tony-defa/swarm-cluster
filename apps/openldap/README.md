@@ -36,8 +36,8 @@ No network needs to be created.
 
 ## Other notes
 
-### Known Issues
-TLS turned off on purpose for now. Trying to get openldap proxied via traefik with no luck so far.
+### TLS over traefik
+The current configuration uses TLS termination at the traefik proxy.
 
 ### Backup
 OpenLDAP data and config are backed up every day a 4 AM and kept for 10 days.

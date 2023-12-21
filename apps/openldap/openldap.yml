@@ -30,12 +30,23 @@ services:
       - LDAP_READONLY_USER_PASSWORD_FILE=/run/secrets/ldap_ro_user_password
     networks:
       - ldap_network
+      - proxy_network
     ports:
       - "389:389"
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
+    labels:
+      traefik.enable: "true"
+      traefik.tcp.routers.ldap.entrypoints: ${LDAP_ENTRYPOINT:-ldaps}
+      traefik.tcp.routers.ldap.rule: HostSNI(`${LDAP_HOST:-ldap.host.local}`)
+      traefik.tcp.routers.ldap.tls: "true"
+      traefik.tcp.routers.ldap.tls.passthrough: "false"
+      traefik.tcp.routers.ldap.tls.certresolver: ${LDAP_CERTRESOLVER:-default}
+      traefik.tcp.routers.ldap.service: ldap
+      traefik.tcp.services.ldap.loadbalancer.server.port: 389
+
 
   openldap-admin:
     <<: *default-opts
