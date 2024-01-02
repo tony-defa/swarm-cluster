@@ -16,12 +16,12 @@ services:
       - ha_config:/config
       - /etc/localtime:/etc/localtime:ro
       - /dev/serial/by-id:/dev/serial/by-id
+      - /run/dbus:/run/dbus:ro
     devices:
       - /dev/ttyUSB0:/dev/ttyUSB0
     ports:
       - 8123:8123
     network_mode: host
-    privileged: true
     restart: always
       
 volumes:
