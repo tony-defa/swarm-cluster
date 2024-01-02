@@ -8,7 +8,7 @@ x-default-opts: &default-opts
       max-size: "1m"
 
 services:
-  logrotate:
+  ha:
     <<: *default-opts
     image: homeassistant/home-assistant:${HA_TAG}
     volumes:
@@ -22,8 +22,9 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
-      constraints:
-        - node.labels.zigbee == true
+      placement:
+        constraints:
+          - node.labels.zigbee == true
       labels:
         traefik.enable: "true"
         traefik.http.routers.homeassistant.entrypoints: ${HA_ENTRYPOINT:-websecure}
