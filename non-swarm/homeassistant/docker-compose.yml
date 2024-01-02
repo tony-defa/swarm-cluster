@@ -18,8 +18,8 @@ services:
       - /dev/serial/by-id:/dev/serial/by-id
     devices:
       - /dev/ttyUSB0:/dev/ttyUSB0
-      ports:
-        - 8123:8123
+    ports:
+      - 8123:8123
     network_mode: host
     restart: always
       
