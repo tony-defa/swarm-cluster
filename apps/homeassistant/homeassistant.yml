@@ -17,6 +17,7 @@ services:
       - /dev/serial/by-id:/dev/serial/by-id
       - /dev/ttyUSB0:/dev/ttyUSB0
     networks:
+      - hostnet
       - proxy_network
     deploy:
       mode: replicated
@@ -36,6 +37,9 @@ services:
 networks:
   proxy_network:
     external: true
+  hostnet:
+    external:
+      name: "host"
 
 volumes:
   ha_config:
