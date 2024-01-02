@@ -21,6 +21,7 @@ services:
     ports:
       - 8123:8123
     network_mode: host
+    privileged: true
     restart: always
       
 volumes:
