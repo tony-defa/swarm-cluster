@@ -18,21 +18,11 @@ services:
       - /dev/serial/by-id:/dev/serial/by-id
     devices:
       - /dev/ttyUSB0:/dev/ttyUSB0
-    # networks:
-    #   - proxy_network
+      ports:
+        - 8123:8123
     network_mode: host
     restart: always
-    labels:
-      traefik.enable: "true"
-      traefik.http.routers.homeassistant.entrypoints: ${HA_ENTRYPOINT:-websecure}
-      traefik.http.routers.homeassistant.rule: Host(`${HA_DOMAIN:-homeassistant.host.local}`)
-      traefik.http.routers.homeassistant.service: homeassistant
-      traefik.http.services.homeassistant.loadbalancer.server.port: 8123
       
-networks:
-  proxy_network:
-    external: true
-
 volumes:
   ha_config:
     driver: local
