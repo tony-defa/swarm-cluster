@@ -1,0 +1,111 @@
+version: "3.8"
+
+x-default-opts: &default-opts
+  env_file: .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://172.17.0.1:12201"
+
+services:
+  db:
+    <<: *default-opts
+    image: bitnami/mongodb:${MONGO_TAG}
+    volumes:
+      - mongo_data:/bitnami/mongodb/data
+    networks:
+      - mongo_internal
+      - mongo_network
+    secrets:
+      - mongodb_root_password
+      - mongodb_db_user
+      - mongodb_db_password
+      - mongodb_db_name
+    environment:
+      ALLOW_EMPTY_PASSWORD: "yes"
+      MONGODB_ROOT_PASSWORD_FILE: /run/secrets/mongodb_root_password
+      MONGODB_USERNAME_FILE: /run/secrets/mongodb_db_user
+      MONGODB_PASSWORD_FILE: /run/secrets/mongodb_db_password
+      MONGODB_DATABASE_FILE: /run/secrets/mongodb_db_name
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 60s
+      restart_policy:
+        condition: on-failure
+
+  exporter:
+    <<: *default-opts
+    image: bitnami/mongodb-exporter:${EXPORTER_TAG}
+    networks:
+      - mongo_internal
+      - metrics_network
+    secrets:
+      - mongodb_root_password
+    environment:
+      MONGODB_URI: mongodb://root:$$(cat /run/secrets/mongodb_root_password)@db:27017
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  express:
+    <<: *default-opts
+    image: mongo-express:${EXPRESS_TAG}
+    networks:
+      - mongo_internal
+      - proxy_network
+    secrets:
+      - mongodb_root_password
+    environment:
+      ME_CONFIG_BASICAUTH: "true"
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD_FILE: /run/secrets/mongodb_root_password
+
+      ME_CONFIG_MONGODB_URL: mongodb://root:secret@db:27017/
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD_FILE: /run/secrets/mongodb_root_password
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.mongo-express.entrypoints: ${EXPRESS_ENTRYPOINT:-websecure}
+        traefik.http.routers.mongo-express.rule: Host(`${EXPRESS_DOMAIN:-mongo.host.local}`)
+        traefik.http.routers.mongo-express.service: mongo-express
+        traefik.http.services.mongo-express.loadbalancer.server.port: 8081
+
+secrets:
+  mongodb_root_password:
+    external: true
+  mongodb_db_user:
+    external: true
+  mongodb_db_password:
+    external: true
+  mongodb_db_name:
+    external: true
+
+networks:
+  mongo_internal:
+    driver: overlay
+
+  mongo_network:
+    external: true
+
+  proxy_network:
+    external: true
+
+  metrics_network:
+    external: true
+
+volumes:
+  mongo_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_MONGO_DATA}
+      type: none
+      o: bind
