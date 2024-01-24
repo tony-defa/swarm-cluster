@@ -16,7 +16,7 @@ services:
     volumes:
       - metabase_data:/metabase-data
       - metabase_plugins:/plugins
-    environments:
+    environment:
       - MB_DB_FILE=/metabase-data/metabase.db
     networks:
       - mongo_network
