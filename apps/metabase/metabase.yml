@@ -1,0 +1,56 @@
+version: "3.8"
+
+x-default-opts: &default-opts
+  env_file: .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://172.17.0.1:12201"
+
+services:
+  metabase:
+    <<: *default-opts
+    image: metabase/metabase:${METABASE_TAG}
+    volumes:
+      - metabase_data:/metabase-data
+      - metabase_plugins:/plugins
+    networks:
+      - mongo_network
+      - proxy_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 60s
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.metabase.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.metabase.rule: Host(`${DOMAIN?Variable not set}`)
+        traefik.http.routers.metabase.service: metabase
+        traefik.http.services.metabase.loadbalancer.server.port: 3000
+      
+networks:
+  mongo_network:
+    external: true
+    
+  proxy_network:
+    external: true
+
+volumes:
+  metabase_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_METABASE_DATA}
+      type: none
+      o: bind
+
+  metabase_plugins:
+    driver: local
+    driver_opts:
+      device: ${HOST_METABASE_PLUGINS}
+      type: none
+      o: bind
