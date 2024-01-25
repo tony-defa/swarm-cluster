@@ -34,8 +34,11 @@ $ docker network create --attachable -d overlay mariadb_network
 
 ## Other notes
 ### Backup 
-The backup service uses `mysqldump` to dump the database to a file. The dump interval is defined in the environment variable `BACKUP_FREQUENCY`. The files are kept for `RETENTION_DAYS` while older files will be deleted automatically.
+The backup service uses `mariadb-dump` to dump the database to a file. The dump interval is defined in the environment variable `BACKUP_FREQUENCY`. The files are kept for `RETENTION_DAYS` while older files will be deleted automatically.
 
 ### Restore 
 To restore a backup simply deploy the `mariadb` stack with an empty data volume. After that follow the instruction from the official documentation: https://mariadb.com/kb/en/restoring-data-from-dump-files/
 > Use the `docker exec -t <service_name> ...` command to execute the restore command.
+
+### `entrypoint.d` directory
+The `entrypoint.d` folder is automatically mounted to the `mariadb` service, any script contained in that folder is executed by the `docker-entrypoint.sh` script from the official `mariadb` image. Read more about it on the [official documentation](https://hub.docker.com/_/mariadb/) under the `Initializing the database contents` section.

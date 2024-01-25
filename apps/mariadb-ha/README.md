@@ -48,3 +48,6 @@ To restore a backup simply deploy the `mariadb` stack with an empty data volume.
 ### `slave-init` Service
 The `slave-init` companion service is used to initialize the slave service on restart and on update. It will wait for each slave replica to be ready and then execute the latest dump (if available) from the backup folder, while uncommenting the `CHANGE MASTER TO` statement. After that the slave is restarted and the `slave-init` service is completed.
 > Known Issue: The `slave-init` service will not start nor be executed when the slave service is scaled down or up. This is due to the fact that the `slave-init` service is not restarted when the slave service is scaled down or up.
+
+### `entrypoint.d` directory
+The `entrypoint.d` folder is automatically mounted to the `mariadb` service, any script contained in that folder is executed by the `docker-entrypoint.sh` script from the official `mariadb` image. Read more about it on the [official documentation](https://hub.docker.com/_/mariadb/) under the `Initializing the database contents` section.
