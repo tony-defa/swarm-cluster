@@ -21,7 +21,7 @@ services:
     <<: *default-opts
     image: wordpress:{{wordpress_tag}}
     {{#command}}
-    command: {{command}}
+    command: {{{command}}}
     {{/command}}
     networks:
       - proxy_network
