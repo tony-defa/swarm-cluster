@@ -22,6 +22,7 @@
 
     "__comment5": "Other configuration",
     "env_file": "example.env",
+    "command": null,
     "nfs_share_ip": null,
     "gelf_address": null
 }
