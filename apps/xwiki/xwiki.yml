@@ -13,7 +13,7 @@ x-default-opts: &default-opts
 services:
   xwiki:
     <<: *default-opts
-    image: "xwiki:lts"
+    image: xwiki:${XWIKI_TAG}
     volumes:
       - data:/usr/local/xwiki
     secrets:
