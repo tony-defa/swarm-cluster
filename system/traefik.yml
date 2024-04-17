@@ -80,6 +80,13 @@ services:
       # - --certificatesResolvers.hetzner-dnschallenge.acme.email=${LE_ACME_EMAIL?Variable not set}
       # - --certificatesResolvers.hetzner-dnschallenge.acme.storage=/data/acme.json
 
+      ## DNS Challenge (cloudflare)
+      # - --entryPoints.websecure.http.tls.certResolver=cloudflare-dnschallenge
+      # - --certificatesResolvers.cloudflare-dnschallenge.acme.dnschallenge=true
+      # - --certificatesResolvers.cloudflare-dnschallenge.acme.dnschallenge.provider=cloudflare
+      # - --certificatesResolvers.cloudflare-dnschallenge.acme.email=${LE_ACME_EMAIL?Variable not set}
+      # - --certificatesResolvers.cloudflare-dnschallenge.acme.storage=/data/acme.json
+
       # Prometheus configuration
       - --metrics.prometheus=true
       - --metrics.prometheus.addEntryPointsLabels=true
@@ -106,6 +113,12 @@ services:
     #   - hetzner_dns_token
     # environment:
     #   - HETZNER_API_KEY_FILE=/run/secrets/hetzner_dns_token
+
+    ## Cloudflare secrets
+    # secrets:
+    #   - cloudflare_dns_api_token
+    # environment:
+    #   - CF_DNS_API_TOKEN=/run/secrets/cloudflare_dns_api_token
     
     networks:
       - proxy_network
@@ -160,6 +173,11 @@ networks:
 ## Hetzner secrets
 # secrets:
 #   hetzner_dns_token:
+#     external: true
+
+## Cloudflare secrets
+# secrets:
+#   cloudflare_dns_api_token:
 #     external: true
 
 volumes:
