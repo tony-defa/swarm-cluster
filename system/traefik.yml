@@ -118,7 +118,7 @@ services:
     # secrets:
     #   - cloudflare_dns_api_token
     # environment:
-    #   - CF_DNS_API_TOKEN=/run/secrets/cloudflare_dns_api_token
+    #   - CF_DNS_API_TOKEN_FILE=/run/secrets/cloudflare_dns_api_token
     
     networks:
       - proxy_network
