@@ -54,10 +54,10 @@ services:
       # - --certificatesResolvers.letsencrypt.acme.httpChallenge.entryPoint=web
 
       ## DNS Challenge (provider agnostic)
-      # - --entryPoints.websecure.http.tls.domains[0].main=${EXTERNAL_DOMAIN?Variable not set}
-      # - --entryPoints.websecure.http.tls.domains[0].sans=*.${EXTERNAL_DOMAIN?Variable not set}
-      # - --entryPoints.websecure.http.tls.domains[1].main=${INTERNAL_DOMAIN?Variable not set}
-      # - --entryPoints.websecure.http.tls.domains[1].sans=*.${INTERNAL_DOMAIN?Variable not set}
+      # - --entryPoints.websecure.http.tls.domains[0].main=${TLS_DOMAIN_1?Variable not set}
+      # - --entryPoints.websecure.http.tls.domains[0].sans=*.${TLS_DOMAIN_1?Variable not set}
+      # - --entryPoints.websecure.http.tls.domains[1].main=${TLS_DOMAIN_2?Variable not set}
+      # - --entryPoints.websecure.http.tls.domains[1].sans=*.${TLS_DOMAIN_2?Variable not set}
 
       ## DNS Challenge (Linode)
       # - --entryPoints.websecure.http.tls.certResolver=linode-dnschallenge
