@@ -32,8 +32,8 @@ services:
 
 networks:
   host_network:
-    external:
-      name: "host"
+    external: true
+    name: "host"
       
   proxy_network:
     external: true
