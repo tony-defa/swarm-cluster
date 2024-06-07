@@ -1,0 +1,46 @@
+version: '3.9'
+
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+
+services:
+  ha:
+    <<: *default-opts
+    image: eclipse-mosquitto:${TAG}
+    # ports:
+    #   - "1883:1883" #default mqtt port
+    #   - "9001:9001" #default mqtt port for websockets
+    networks:
+      - mqtt
+    volumes:
+      - config:/mosquitto/config:rw
+      - data:/mosquitto/data:rw
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: any
+
+networks:
+  mqtt:
+    driver: overlay
+    attachable: true
+
+volumes:
+  config:
+    driver: local
+    driver_opts:
+      device: ${HOST_MQTT_CONFIG}
+      type: none
+      o: bind
+
+  data:
+    driver: local
+    driver_opts:
+      device: ${HOST_MQTT_DATA}
+      type: none
+      o: bind

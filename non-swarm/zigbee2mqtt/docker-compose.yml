@@ -27,6 +27,10 @@ services:
       traefik.http.routers.zigbee2mqtt.rule: Host(`${Z2M_DOMAIN:-z2m.host.local}`)
       traefik.http.routers.zigbee2mqtt.service: zigbee2mqtt
       traefik.http.services.zigbee2mqtt.loadbalancer.server.port: 8080
+
+networks:
+  external:
+    name: mqtt
       
 volumes:
   z2m_data:

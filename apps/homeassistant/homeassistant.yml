@@ -15,8 +15,6 @@ services:
       - ha_config:/config
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
-    devices:
-      - /dev/ttyUSB0:/dev/ttyUSB0
     ports:
       - 8123:8123
     networks:
@@ -25,7 +23,7 @@ services:
       mode: replicated
       replicas: 1
       restart_policy:
-        condition: always
+        condition: any
       labels:
         traefik.enable: "true"
         traefik.http.routers.homeassistant.entrypoints: ${HA_ENTRYPOINT:-websecure}
