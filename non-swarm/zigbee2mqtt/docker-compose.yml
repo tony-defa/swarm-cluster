@@ -23,12 +23,6 @@ services:
       # Make sure this matched your adapter location
       - /dev/ttyUSB0:/dev/ttyACM0
     restart: always
-    labels:
-      traefik.enable: "true"
-      traefik.http.routers.zigbee2mqtt.entrypoints: ${Z2M_ENTRYPOINT:-websecure}
-      traefik.http.routers.zigbee2mqtt.rule: Host(`${Z2M_DOMAIN:-z2m.host.local}`)
-      traefik.http.routers.zigbee2mqtt.service: zigbee2mqtt
-      traefik.http.services.zigbee2mqtt.loadbalancer.server.port: 8080
 
 networks:
   mqtt:
