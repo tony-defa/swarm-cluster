@@ -15,6 +15,8 @@ services:
     volumes:
       - z2m_data:/app/data
       - /run/udev:/run/udev:ro
+    networks:
+      - mqtt
     ports:
       - 8080:8080
     devices:
@@ -29,8 +31,8 @@ services:
       traefik.http.services.zigbee2mqtt.loadbalancer.server.port: 8080
 
 networks:
-  external:
-    name: mqtt
+  mqtt:
+    external: true
       
 volumes:
   z2m_data:
