@@ -15,8 +15,6 @@ services:
       - ha_config:/config
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
-    ports:
-      - 8123:8123
     networks:
       - host_network
     deploy:
