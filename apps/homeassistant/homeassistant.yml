@@ -17,7 +17,6 @@ services:
       - /run/dbus:/run/dbus:ro
     networks:
       - proxy_network
-      - host_network
     deploy:
       mode: replicated
       replicas: 1
@@ -31,10 +30,6 @@ services:
         traefik.http.services.homeassistant.loadbalancer.server.port: 8123
 
 networks:
-  host_network:
-    external: true
-    name: "host"
-      
   proxy_network:
     external: true
       
