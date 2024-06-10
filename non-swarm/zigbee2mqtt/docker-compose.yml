@@ -27,6 +27,7 @@ services:
 networks:
   mqtt:
     external: true
+    name: mqtt_network
       
 volumes:
   z2m_data:

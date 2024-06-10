@@ -15,7 +15,7 @@ services:
     #   - "1883:1883" #default mqtt port
     #   - "9001:9001" #default mqtt port for websockets
     networks:
-      - mqtt
+      - mqtt_network
     volumes:
       - config:/mosquitto/config:rw
       - data:/mosquitto/data:rw
@@ -26,9 +26,8 @@ services:
         condition: any
 
 networks:
-  mqtt:
-    driver: overlay
-    attachable: true
+  mqtt_network:
+    external: true
 
 volumes:
   config:
