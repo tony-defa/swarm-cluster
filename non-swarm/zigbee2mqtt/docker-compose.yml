@@ -16,18 +16,26 @@ services:
       - z2m_data:/app/data
       - /run/udev:/run/udev:ro
     networks:
+      - proxy_network
       - mqtt
-    ports:
-      - 8080:8080
     devices:
       # Make sure this matched your adapter location
       - /dev/ttyUSB0:/dev/ttyACM0
     restart: always
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.z2m.entrypoints: ${Z2M_ENTRYPOINT:-websecure}
+      traefik.http.routers.z2m.rule: Host(`${Z2M_DOMAIN:-z2m.host.local}`)
+      traefik.http.routers.z2m.service: z2m
+      traefik.http.services.z2m.loadbalancer.server.port: 8080
 
 networks:
   mqtt:
     external: true
     name: mqtt_network
+
+  proxy_network:
+    external: true
       
 volumes:
   z2m_data:
