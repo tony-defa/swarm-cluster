@@ -11,9 +11,6 @@ services:
   mqtt:
     <<: *default-opts
     image: eclipse-mosquitto:${TAG}
-    # ports:
-    #   - "1883:1883" #default mqtt port
-    #   - "9001:9001" #default mqtt port for websockets
     networks:
       - mqtt_network
     volumes:
