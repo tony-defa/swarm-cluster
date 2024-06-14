@@ -1,0 +1,192 @@
+x-default-opts: &default-opts
+  {{#env_file}}
+  env_file:
+    {{env_file}}
+  {{/env_file}}
+  logging:
+  {{^gelf_address}}
+    options:
+      max-size: "1m"
+  {{/gelf_address}}
+  {{#gelf_address}}
+    driver: "gelf"
+    options:
+      gelf-address: "{{{gelf_address}}}"
+  {{/gelf_address}}
+
+services:
+  ha:
+    <<: *default-opts
+    image: homeassistant/home-assistant:{{ha_tag}}
+    volumes:
+      - ha_config:/config
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+    networks:
+      - proxy_network
+    {{#ha_publish_ports}}
+    ports:
+    {{#ha_ports}}
+      - target: {{target}}
+        published: {{published}}
+        protocol: {{protocol}}
+        mode: {{mode}}
+    {{/ha_ports}}
+    {{/ha_publish_ports}}
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: any
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.{{service_name}}-ha.entrypoints: {{#entrypoint}}{{entrypoint}}{{/entrypoint}}{{^entrypoint}}websecure{{/entrypoint}}
+        traefik.http.routers.{{service_name}}-ha.rule: {{#ha_routing_rule}}{{{ha_routing_rule}}}{{/ha_routing_rule}}{{^ha_routing_rule}}Host(`wordpress.host.local`){{/ha_routing_rule}}
+        traefik.http.routers.{{service_name}}-ha.service: {{service_name}}-ha
+        traefik.http.services.{{service_name}}-ha.loadbalancer.server.port: 8123
+
+
+https://www.zigbee2mqtt.io/guide/installation/02_docker.html#automatic-device-mapping-for-cgroup-v1-and-v2
+
+
+  {{#use_z2m}}
+  mqtt:
+    <<: *default-opts
+    image: eclipse-mosquitto:{{mqtt_tag}}
+    networks:
+      - mqtt
+    volumes:
+      - mqtt_config:/mosquitto/config:rw
+      - mqtt_data:/mosquitto/data:rw
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  zigbee2mqtt:
+    <<: *default-opts
+    image: koenkk/zigbee2mqtt:{{z2m_tag}}
+    volumes:
+      - z2m_data:/app/data
+      - /run/udev:/run/udev:ro
+      # Make sure this matched your adapter location
+      - {{zigbee_device}}:/dev/ttyACM0
+    networks:
+      - proxy_network
+      - mqtt
+    {{#z2m_publish_ports}}
+    ports:
+    {{#z2m_ports}}
+      - target: {{target}}
+        published: {{published}}
+        protocol: {{protocol}}
+        mode: {{mode}}
+    {{/z2m_ports}}
+    {{/z2m_publish_ports}}
+    deploy:
+      mode: replicated
+      replicas: 1
+      constraints:
+        - node.labels.zigbee == dongle
+      restart_policy:
+        condition: any
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.{{service_name}}-ha.entrypoints: {{#entrypoint}}{{entrypoint}}{{/entrypoint}}{{^entrypoint}}websecure{{/entrypoint}}
+        traefik.http.routers.{{service_name}}-ha.rule: {{#z2m_routing_rule}}{{{z2m_routing_rule}}}{{/z2m_routing_rule}}{{^z2m_routing_rule}}Host(`wordpress.host.local`){{/z2m_routing_rule}}
+        traefik.http.routers.{{service_name}}-ha.service: {{service_name}}-ha
+        traefik.http.services.{{service_name}}-ha.loadbalancer.server.port: 8080
+
+  dmm:
+    image: docker:latest
+    entrypoint: docker
+    restart: unless-stopped
+    privileged: true
+    command: |
+      run
+      -i
+      --rm
+      --privileged
+      --cgroupns=host
+      --pid=host
+      --userns=host
+      -v /sys:/host/sys
+      -v /var/run/docker.sock:/var/run/docker.sock
+      -v {{zigbee_device}}:{{zigbee_device}}
+      ghcr.io/allfro/allfro/device-mapping-manager:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.labels.zigbee == dongle
+  {{/use_z2m}}
+
+networks:
+  proxy_network:
+    external: true
+    
+  mqtt:
+    driver: overlay
+
+volumes:
+  ha_config:
+    driver: local
+    driver_opts:
+    {{#nfs_share_ip}}
+      device: ":{{{host_ha_data}}}"
+      type: nfs
+      o: addr={{nfs_share_ip}},rw,sync,nfsvers=4.1
+    {{/nfs_share_ip}}
+    {{^nfs_share_ip}}
+      device: {{{host_ha_data}}}
+      type: none
+      o: bind
+    {{/nfs_share_ip}}
+
+volumes:
+  z2m_data:
+    driver: local
+    driver_opts:
+    {{#nfs_share_ip}}
+      device: ":{{{host_z2m}}}"
+      type: nfs
+      o: addr={{nfs_share_ip}},rw,sync,nfsvers=4.1
+    {{/nfs_share_ip}}
+    {{^nfs_share_ip}}
+      device: {{{host_z2m}}}
+      type: none
+      o: bind
+    {{/nfs_share_ip}}
+
+volumes:
+  mqtt_data:
+    driver: local
+    driver_opts:
+    {{#nfs_share_ip}}
+      device: ":{{{host_mqtt_data}}}"
+      type: nfs
+      o: addr={{nfs_share_ip}},rw,sync,nfsvers=4.1
+    {{/nfs_share_ip}}
+    {{^nfs_share_ip}}
+      device: {{{host_mqtt_data}}}
+      type: none
+      o: bind
+    {{/nfs_share_ip}}
+
+volumes:
+  mqtt_config:
+    driver: local
+    driver_opts:
+    {{#nfs_share_ip}}
+      device: ":{{{host_mqtt_config}}}"
+      type: nfs
+      o: addr={{nfs_share_ip}},rw,sync,nfsvers=4.1
+    {{/nfs_share_ip}}
+    {{^nfs_share_ip}}
+      device: {{{host_mqtt_config}}}
+      type: none
+      o: bind
+    {{/nfs_share_ip}}

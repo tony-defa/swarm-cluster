@@ -1,0 +1,38 @@
+
+{
+    "__comment1": "Host volume paths",
+    "host_ha_data": "/cluster/homeassistant/ha",
+    "host_z2m": "/cluster/homeassistant/z2m",
+    "host_mqtt_data": "/cluster/homeassistant/mqtt_data",
+    "host_mqtt_config": "/cluster/homeassistant/mqtt_config",
+
+    "__comment2": "Image tags",
+    "ha_tag": "stable",
+    "z2m_tag": "stable",
+    "mqtt_tag": "latest",
+
+    "__comment3": "Proxy configuration",
+    "service_name": "homeassistant",
+    "entrypoint": "",
+    "ha_routing_rule": "Host(`homeassistant.host.local`)",
+    "z2m_routing_rule": "Host(`zigbee2mqtt.host.local`)",
+
+    "__comment4": "Port configuration homeassistant",
+    "ha_publish_ports": false,
+    "ha_ports": [
+        {"target": 8123, "published": 8123, "protocol": "tcp", "mode": "host"}
+    ],
+
+    "__comment5": "Port configuration homeassistant",
+    "z2m_publish_ports": false,
+    "z2m_ports": [
+        {"target": 8080, "published": 8080, "protocol": "tcp", "mode": "host"}
+    ],
+
+    "__comment6": "Other configuration",
+    "env_file": "example.env",
+    "use_z2m": true,
+    "zigbee_device": "/dev/ttyUSB0",
+    "gelf_address": null,
+    "nfs_share_ip": null
+}
