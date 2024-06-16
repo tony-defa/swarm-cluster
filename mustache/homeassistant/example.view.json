@@ -8,7 +8,7 @@
 
     "__comment2": "Image tags",
     "ha_tag": "stable",
-    "z2m_tag": "stable",
+    "z2m_tag": "latest",
     "mqtt_tag": "latest",
 
     "__comment3": "Proxy configuration",

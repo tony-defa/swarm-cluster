@@ -88,20 +88,19 @@ https://www.zigbee2mqtt.io/guide/installation/02_docker.html#automatic-device-ma
       mode: replicated
       replicas: 1
       constraints:
-        - node.labels.zigbee == dongle
+        - node.labels.zigbee=dongle
       restart_policy:
         condition: any
       labels:
         traefik.enable: "true"
-        traefik.http.routers.{{service_name}}-ha.entrypoints: {{#entrypoint}}{{entrypoint}}{{/entrypoint}}{{^entrypoint}}websecure{{/entrypoint}}
-        traefik.http.routers.{{service_name}}-ha.rule: {{#z2m_routing_rule}}{{{z2m_routing_rule}}}{{/z2m_routing_rule}}{{^z2m_routing_rule}}Host(`wordpress.host.local`){{/z2m_routing_rule}}
-        traefik.http.routers.{{service_name}}-ha.service: {{service_name}}-ha
-        traefik.http.services.{{service_name}}-ha.loadbalancer.server.port: 8080
+        traefik.http.routers.{{service_name}}-z2m.entrypoints: {{#entrypoint}}{{entrypoint}}{{/entrypoint}}{{^entrypoint}}websecure{{/entrypoint}}
+        traefik.http.routers.{{service_name}}-z2m.rule: {{#z2m_routing_rule}}{{{z2m_routing_rule}}}{{/z2m_routing_rule}}{{^z2m_routing_rule}}Host(`wordpress.host.local`){{/z2m_routing_rule}}
+        traefik.http.routers.{{service_name}}-z2m.service: {{service_name}}-z2m
+        traefik.http.services.{{service_name}}-z2m.loadbalancer.server.port: 8080
 
   dmm:
     image: docker:latest
     entrypoint: docker
-    restart: unless-stopped
     privileged: true
     command: |
       run
@@ -121,7 +120,9 @@ https://www.zigbee2mqtt.io/guide/installation/02_docker.html#automatic-device-ma
       mode: global
       placement:
         constraints:
-          - node.labels.zigbee == dongle
+          - node.labels.zigbee=dongle
+      restart_policy:
+        condition: any
   {{/use_z2m}}
 
 networks:
@@ -146,7 +147,6 @@ volumes:
       o: bind
     {{/nfs_share_ip}}
 
-volumes:
   z2m_data:
     driver: local
     driver_opts:
@@ -161,7 +161,6 @@ volumes:
       o: bind
     {{/nfs_share_ip}}
 
-volumes:
   mqtt_data:
     driver: local
     driver_opts:
@@ -176,7 +175,6 @@ volumes:
       o: bind
     {{/nfs_share_ip}}
 
-volumes:
   mqtt_config:
     driver: local
     driver_opts:
