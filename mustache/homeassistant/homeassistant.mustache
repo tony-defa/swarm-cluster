@@ -86,8 +86,9 @@ services:
     deploy:
       mode: replicated
       replicas: 1
-      constraints:
-        - node.labels.zigbee=dongle
+      placement:
+        constraints:
+          - node.labels.zigbee == dongle
       restart_policy:
         condition: any
       labels:
