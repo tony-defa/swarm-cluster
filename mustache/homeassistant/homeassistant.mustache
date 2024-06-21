@@ -24,6 +24,9 @@ services:
       - /run/dbus:/run/dbus:ro
     networks:
       - proxy_network
+      {{#use_z2m}}
+      - mqtt
+      {{/use_z2m}}
     {{#ha_publish_ports}}
     ports:
     {{#ha_ports}}
@@ -44,10 +47,6 @@ services:
         traefik.http.routers.{{service_name}}-ha.rule: {{#ha_routing_rule}}{{{ha_routing_rule}}}{{/ha_routing_rule}}{{^ha_routing_rule}}Host(`wordpress.host.local`){{/ha_routing_rule}}
         traefik.http.routers.{{service_name}}-ha.service: {{service_name}}-ha
         traefik.http.services.{{service_name}}-ha.loadbalancer.server.port: 8123
-
-
-https://www.zigbee2mqtt.io/guide/installation/02_docker.html#automatic-device-mapping-for-cgroup-v1-and-v2
-
 
   {{#use_z2m}}
   mqtt:
@@ -112,7 +111,7 @@ https://www.zigbee2mqtt.io/guide/installation/02_docker.html#automatic-device-ma
       --userns=host
       -v /sys:/host/sys
       -v /var/run/docker.sock:/var/run/docker.sock
-      -v {{zigbee_device}}:{{zigbee_device}}
+      -v /dev:/dev
       ghcr.io/allfro/allfro/device-mapping-manager:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -120,7 +119,7 @@ https://www.zigbee2mqtt.io/guide/installation/02_docker.html#automatic-device-ma
       mode: global
       placement:
         constraints:
-          - node.labels.zigbee=dongle
+          - node.labels.zigbee == dongle
       restart_policy:
         condition: any
   {{/use_z2m}}
@@ -128,9 +127,11 @@ https://www.zigbee2mqtt.io/guide/installation/02_docker.html#automatic-device-ma
 networks:
   proxy_network:
     external: true
-    
+  
+  {{#use_z2m}}
   mqtt:
     driver: overlay
+  {{/use_z2m}}
 
 volumes:
   ha_config:
@@ -147,6 +148,7 @@ volumes:
       o: bind
     {{/nfs_share_ip}}
 
+  {{#use_z2m}}
   z2m_data:
     driver: local
     driver_opts:
@@ -188,3 +190,4 @@ volumes:
       type: none
       o: bind
     {{/nfs_share_ip}}
+  {{/use_z2m}}
