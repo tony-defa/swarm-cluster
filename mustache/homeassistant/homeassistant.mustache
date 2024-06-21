@@ -23,6 +23,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
     networks:
+      - host_network
       - proxy_network
       {{#use_z2m}}
       - mqtt
@@ -127,6 +128,10 @@ services:
 networks:
   proxy_network:
     external: true
+
+  host_network:
+    external: true
+    name: "host"
   
   {{#use_z2m}}
   mqtt:
