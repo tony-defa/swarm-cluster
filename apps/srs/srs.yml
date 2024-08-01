@@ -32,10 +32,15 @@ services:
         condition: on-failure
       labels:
         traefik.enable: "true"
-        traefik.http.routers.srs.entrypoints: ${ENTRYPOINT:-websecure}
-        traefik.http.routers.srs.rule: Host(`${DOMAIN:-srs.host.local}`)
-        traefik.http.routers.srs.service: srs
-        traefik.http.services.srs.loadbalancer.server.port: 8080
+        traefik.http.routers.srs_web.entrypoints: ${WEB_ENTRYPOINT:-websecure}
+        traefik.http.routers.srs_web.rule: Host(`${WEB_DOMAIN:-srs-web.host.local}`)
+        traefik.http.routers.srs_web.service: srs_web
+        traefik.http.services.srs_web.loadbalancer.server.port: 8080
+
+        traefik.http.routers.srs_api.entrypoints: ${API_ENTRYPOINT:-websecure}
+        traefik.http.routers.srs_api.rule: Host(`${API_DOMAIN:-srs-api.host.local}`)
+        traefik.http.routers.srs_api.service: srs_api
+        traefik.http.services.srs_api.loadbalancer.server.port: 1985
 
 configs:
   srs_config:
