@@ -1,0 +1,47 @@
+version: '3.8'
+
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://172.17.0.1:12201"
+
+services:
+  srs:
+    <<: *default-opts
+    image: ossrs/srs:${SRS_TAG}
+    command: ./objs/srs -c /srs.conf
+    networks:
+      - proxy_network
+    ports:
+      - "8080:8080"
+      - "1935:1935"
+      - "1985:1985"
+      - "8000:8000/udp"
+    configs:
+      - source: srs_config
+        target: /srs.conf
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.srs.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.srs.rule: Host(`${DOMAIN:-srs.host.local}`)
+        traefik.http.routers.srs.service: srs
+        traefik.http.services.srs.loadbalancer.server.port: 8080
+
+configs:
+  srs_config:
+    file: ./.conf
+    name: srs-config-1
+
+networks:
+  proxy_network:
+    external: true
