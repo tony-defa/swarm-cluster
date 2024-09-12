@@ -99,27 +99,29 @@ services:
         condition: on-failure
         delay: 600s
 
-  {{#cron_command}}
+  {{#use_cron}}
   cron:
     <<: *default-opts
-    image: avhost/go-cron:latest
-    environment:
-      - COMMAND="{{cron_command}}"
-      {{#cron_time}}
-      - CRON_TIME="{{cron_time}}"
-      {{/cron_time}}
-      {{#cron_log_level}}
-      - LOGLEVEL="{{cron_log_level}}"
-      {{/cron_log_level}}
-      {{#cron_enable_syslog}}
-      - ENABLE_SYSLOG="{{cron_enable_syslog}}"
-      {{/cron_enable_syslog}}
+    image: alpine:3.12
+    command: 
+      - sh
+      - -c
+      - | 
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] INFO: Cron service started. First cron job will be executed in $$CRON_FREQUENCY.";
+        while true; do
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] INFO: Executing: $$CRON_COMMAND";
+          sh -c $$CRON_COMMAND;
+          if [ $$? -ne 0 ]; then
+            echo "[$$(date +'%Y-%m-%d %H:%M:%S')] ERROR: Cron job failed.";
+          fi
+          sleep $$CRON_FREQUENCY;
+        done
     networks:
       - wp_network
     deploy:
       restart_policy:
         condition: on-failure
-  {{/cron_command}}
+  {{/use_cron}}
 
 networks:
   proxy_network:
