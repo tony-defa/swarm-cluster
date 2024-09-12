@@ -110,7 +110,7 @@ services:
         echo "[$$(date +'%Y-%m-%d %H:%M:%S')] INFO: Cron service started. First cron job will be executed in {{cron_frequency}}.";
         while true; do
           echo "[$$(date +'%Y-%m-%d %H:%M:%S')] INFO: Executing: {{cron_command}}";
-          sh -c {{cron_command}};
+          sh -c "{{cron_command}}";
           if [ $$? -ne 0 ]; then
             echo "[$$(date +'%Y-%m-%d %H:%M:%S')] ERROR: Cron job failed.";
           fi
