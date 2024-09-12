@@ -104,15 +104,15 @@ services:
     <<: *default-opts
     image: avhost/go-cron:latest
     environment:
-      - COMMAND={{cron_command}}
+      - COMMAND="{{cron_command}}"
       {{#cron_time}}
-      - CRON_TIME={{cron_time}}
+      - CRON_TIME="{{cron_time}}"
       {{/cron_time}}
-      {{#cron_loglevel}}
-      - LOGLEVEL={{cron_loglevel}}
-      {{/cron_loglevel}}
+      {{#cron_log_level}}
+      - LOGLEVEL="{{cron_log_level}}"
+      {{/cron_log_level}}
       {{#cron_enable_syslog}}
-      - ENABLE_SYSLOG={{cron_enable_syslog}}
+      - ENABLE_SYSLOG="{{cron_enable_syslog}}"
       {{/cron_enable_syslog}}
     networks:
       - wp_network
