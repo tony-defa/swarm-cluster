@@ -26,5 +26,6 @@
     "nfs_share_ip": null,
     "gelf_address": null,
     "cron_command": "wget -q -T 5 -O /dev/null http://web:80/wp-cron.php",
-    "cron_frequency": "5m"
+    "cron_frequency": "5m",
+    "wp_extra": "define('DISABLE_WP_CRON', true);"
 }
