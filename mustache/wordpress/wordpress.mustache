@@ -107,6 +107,14 @@ services:
       - sh
       - -c
       - | 
+        if [ -z "$$CRON_FREQUENCY" ]; then
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] ERROR: CRON_FREQUENCY is not set.";
+          exit 1;
+        fi
+        if [ -z "$$CRON_COMMAND" ]; then
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] ERROR: CRON_COMMAND is not set.";
+          exit 1;
+        fi
         echo "[$$(date +'%Y-%m-%d %H:%M:%S')] INFO: Cron service started. First cron job will be executed in $$CRON_FREQUENCY.";
         while true; do
           echo "[$$(date +'%Y-%m-%d %H:%M:%S')] INFO: Executing: $$CRON_COMMAND";
