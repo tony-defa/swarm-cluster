@@ -99,6 +99,22 @@ services:
         condition: on-failure
         delay: 600s
 
+  {{#cron_command}}
+  cron:
+    <<: *default-opts
+    image: avhost/go-cron:latest
+    environment:
+      - COMMAND={{cron_command}}
+      - CRON_TIME={{cron_time}}
+      - LOGLEVEL={{cron_loglevel}}
+      - ENABLE_SYSLOG={{cron_enable_syslog}}
+    networks:
+      - wp_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+  {{/cron_command}}
+
 networks:
   proxy_network:
     external: true

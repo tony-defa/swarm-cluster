@@ -24,5 +24,11 @@
     "env_file": "example.env",
     "command": null,
     "nfs_share_ip": null,
-    "gelf_address": null
+    "gelf_address": null,
+
+    "__comment6": "Cron configuration",
+    "cron_command": null,
+    "cron_time": "5m",
+    "cron_log_level": "info",
+    "cron_enable_syslog": true
 }
