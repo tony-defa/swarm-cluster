@@ -92,6 +92,7 @@ services:
           - node.labels.zigbee == dongle
       restart_policy:
         condition: any
+        delay: 60s
       labels:
         traefik.enable: "true"
         traefik.http.routers.{{service_name}}-z2m.entrypoints: {{#entrypoint}}{{entrypoint}}{{/entrypoint}}{{^entrypoint}}websecure{{/entrypoint}}
