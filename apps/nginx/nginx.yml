@@ -12,6 +12,8 @@ services:
   nginx:
     <<: *default-opts
     image: nginx:${NGINX_TAG}
+    networks:
+      - proxy_network
     volumes:
       - root:/usr/share/nginx/html
     configs:
@@ -56,6 +58,10 @@ configs:
   nginx_conf:
     file: ./config/.conf
     name: nginx-conf-1
+
+networks:
+  proxy_network:
+    external: true
 
 volumes:
   root:
