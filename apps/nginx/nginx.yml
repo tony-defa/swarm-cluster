@@ -1,0 +1,73 @@
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://172.17.0.1:12201"
+
+services:
+  nginx:
+    <<: *default-opts
+    image: nginx:${NGINX_TAG}
+    volumes:
+      - root:/usr/share/nginx/html
+    configs:
+      - source: nginx_conf
+        target: /etc/nginx/nginx.conf
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: any
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.nginx.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.nginx.rule: Host(`${DOMAIN?Variable not set}`)
+        traefik.http.routers.nginx.service: nginx
+        traefik.http.services.nginx.loadbalancer.server.port: 80
+
+  backup:
+    <<: *default-opts
+    image: alpine:latest
+    command: 
+      - sh
+      - -c
+      - | 
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed in $$BACKUP_FREQUENCY.";
+        while true; do
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of nginx files...";
+          tar -C /data/ -cvzf /backup/www_$$(date +'%Y%m%d_%H%M%S').tar.gz .;
+          find /backup -mtime +$$RETENTION_DAYS -exec rm -f {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in $$BACKUP_FREQUENCY.";
+          sleep $$BACKUP_FREQUENCY;
+        done
+    volumes:
+      - backup:/backup
+      - root:/data:ro
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
+configs:
+  nginx_conf:
+    file: ./config/.conf
+    name: nginx-conf-1
+
+volumes:
+  root:
+    driver: local
+    driver_opts:
+      device: ${HOST_NGINX_ROOT}
+      type: none
+      o: bind
+
+  backup:
+    driver: local
+    driver_opts:
+      device: ${HOST_NGINX_BACKUP}
+      type: none
+      o: bind
