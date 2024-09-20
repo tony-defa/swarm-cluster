@@ -15,10 +15,16 @@ services:
     networks:
       - proxy_network
     volumes:
-      - root:/usr/share/nginx/html
+      - root:/var/root
+      - configs:/var/conf.d
     configs:
       - source: nginx_conf
         target: /etc/nginx/nginx.conf
+    healthcheck:
+      test: curl --fail -s http://localhost:80 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 2
     deploy:
       mode: replicated
       replicas: 1
@@ -68,6 +74,13 @@ volumes:
     driver: local
     driver_opts:
       device: ${HOST_NGINX_ROOT}
+      type: none
+      o: bind
+
+  configs:
+    driver: local
+    driver_opts:
+      device: ${HOST_NGINX_CONFIGS}
       type: none
       o: bind
 
