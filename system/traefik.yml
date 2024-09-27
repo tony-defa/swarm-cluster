@@ -24,12 +24,11 @@ services:
       - --api.insecure=true
 
       # Provider configuration
-      - --providers.docker.watch=true
-      - --providers.docker.swarmMode=true
-      - --providers.docker.exposedByDefault=false
-      - --providers.docker.swarmModeRefreshSeconds=15
-      - --providers.docker.network=proxy_network
-      - --providers.docker.endpoint=unix:///var/run/docker.sock
+      - --providers.swarm.watch=true
+      - --providers.swarm.exposedByDefault=false
+      - --providers.swarm.refreshSeconds=15
+      - --providers.swarm.network=proxy_network
+      - --providers.swarm.endpoint=unix:///var/run/docker.sock
 
       - --providers.file.watch=true
       - --providers.file.directory=/data/dynamic/
