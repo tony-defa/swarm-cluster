@@ -31,12 +31,12 @@ No network needs to be created.
 ## Other notes
 Configure each service that needs to use this middleware by adding the following label
 ```yml
-traefik.http.routers.<router-name>.middlewares: oauth@docker
+traefik.http.routers.<router-name>.middlewares: oauth@swarm
 ```
 
 Alternatively you can add the middleware to an entrypoint
 ```sh
---entryPoints.<entrypoint-name>.http.middlewares=oauth@docker
+--entryPoints.<entrypoint-name>.http.middlewares=oauth@swarm
 ```
 
 > Replace the `<annotations>` with correct values.

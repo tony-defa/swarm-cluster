@@ -48,7 +48,7 @@ services:
         traefik.http.middlewares.nextcloud-redirectregex.redirectregex.regex: (http|https)://(.*)/.well-known/(card|cal)dav
         traefik.http.middlewares.nextcloud-redirectregex.redirectregex.replacement: $${1}://$${2}/remote.php/dav/
         traefik.http.middlewares.nextcloud-redirectregex.redirectregex.permanent: "true"
-        traefik.http.routers.nextcloud.middlewares: nextcloud-redirectregex@docker
+        traefik.http.routers.nextcloud.middlewares: nextcloud-redirectregex
 
   backup:
     <<: *default-opts
