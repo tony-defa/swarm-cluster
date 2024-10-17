@@ -55,6 +55,15 @@ services:
     image: eclipse-mosquitto:{{mqtt_tag}}
     networks:
       - mqtt
+    {{#mqtt_publish_ports}}
+    ports:
+    {{#mqtt_ports}}
+      - target: {{target}}
+        published: {{published}}
+        protocol: {{protocol}}
+        mode: {{mode}}
+    {{/mqtt_ports}}
+    {{/mqtt_publish_ports}}
     volumes:
       - mqtt_config:/mosquitto/config:rw
       - mqtt_data:/mosquitto/data:rw

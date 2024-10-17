@@ -17,19 +17,21 @@
     "ha_routing_rule": "Host(`homeassistant.host.local`)",
     "z2m_routing_rule": "Host(`zigbee2mqtt.host.local`)",
 
-    "__comment4": "Port configuration homeassistant",
+    "__comment4": "Port configuration",
     "ha_publish_ports": false,
     "ha_ports": [
         {"target": 8123, "published": 8123, "protocol": "tcp", "mode": "host"}
     ],
-
-    "__comment5": "Port configuration homeassistant",
     "z2m_publish_ports": false,
     "z2m_ports": [
         {"target": 8080, "published": 8080, "protocol": "tcp", "mode": "host"}
     ],
+    "mqtt_publish_ports": false,
+    "mqtt_ports": [
+        {"target": 1883, "published": 1883, "protocol": "tcp", "mode": "ingress"}
+    ],
 
-    "__comment6": "Other configuration",
+    "__comment5": "Other configuration",
     "env_file": "example.env",
     "use_z2m": true,
     "zigbee_device": "/dev/ttyUSB0",
