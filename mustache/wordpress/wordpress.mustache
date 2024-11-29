@@ -43,7 +43,7 @@ services:
       - WORDPRESS_DB_USER=${DB_USER}
       - WORDPRESS_DB_PASSWORD=${DB_PASSWORD}
       {{#wp_extra}}
-      - WORDPRESS_CONFIG_EXTRA="{{{wp_extra}}}"
+      - WORDPRESS_CONFIG_EXTRA={{{wp_extra}}}
       {{/wp_extra}}
     deploy:
       mode: replicated
