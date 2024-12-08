@@ -170,7 +170,7 @@ services:
           # Wait for response and save the binary string as a zip file
           mosquitto_sub -h mqtt -p 1883 \
             -t zigbee2mqtt/bridge/response/backup -C 1 | \
-          jq -r '.data.zip' | base64 -d > $$backup_dir/z2m_backup_$(date +%Y-%m-%d_%H-%M-%S).zip
+          jq -r '.data.zip' | base64 -d > $$backup_dir/z2m_backup_$$(date +%Y-%m-%d_%H-%M-%S).zip
 
           # Remove old backups older than RETENTION_DAYS
           find $$backup_dir -iname "z2m_backup_*.zip" -mtime +{{backup_retention_days}} -exec rm -rf {} \;
@@ -203,7 +203,7 @@ services:
 
           latest_backup=$$(ls -t /config/backups/*.tar | head -n 1)
           if [ -f "$$latest_backup" ]; then
-            mv "$$latest_backup" "$$backup_dir/ha_backup_$(date +%Y-%m-%d_%H-%M-%S).tar"
+            mv "$$latest_backup" "$$backup_dir/ha_backup_$$(date +%Y-%m-%d_%H-%M-%S).tar"
 
             # Remove old backups older than RETENTION_DAYS
             find $$backup_dir -iname "z2m_backup_*.zip" -mtime +{{backup_retention_days}} -exec rm -rf {} \;
