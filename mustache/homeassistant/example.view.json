@@ -5,6 +5,7 @@
     "host_z2m": "/cluster/homeassistant/z2m",
     "host_mqtt_data": "/cluster/homeassistant/mqtt_data",
     "host_mqtt_config": "/cluster/homeassistant/mqtt_config",
+    "host_backup": "/cluster/homeassistant/backup",
 
     "__comment2": "Image tags",
     "ha_tag": "stable",
@@ -33,6 +34,8 @@
 
     "__comment5": "Other configuration",
     "env_file": "example.env",
+    "backup_retention_days": 14,
+    "backup_frequency": 86400,
     "use_z2m": true,
     "zigbee_device": "/dev/ttyUSB0",
     "gelf_address": null,

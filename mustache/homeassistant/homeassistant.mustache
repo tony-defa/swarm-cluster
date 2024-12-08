@@ -20,6 +20,7 @@ services:
     image: homeassistant/home-assistant:{{ha_tag}}
     volumes:
       - ha_config:/config
+      - backup_dir:/backups
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
     networks:
@@ -78,6 +79,7 @@ services:
     image: koenkk/zigbee2mqtt:{{z2m_tag}}
     volumes:
       - z2m_data:/app/data
+      - backup_dir:/backups
       - /run/udev:/run/udev:ro
       # Make sure this matched your adapter location
       - {{zigbee_device}}:/dev/ttyACM0
@@ -139,7 +141,82 @@ services:
           - node.labels.zigbee == dongle
       restart_policy:
         condition: any
+  
+  backup_z2m:
+    <<: *default-opts
+    image: eclipse-mosquitto:latest
+    volumes:
+      - backup_dir:/backup
+    networks:
+      - mqtt
+    command:
+      - sh
+      - -c
+      - | 
+        apk --update add jq
+        SECS=$$(expr `date -d "04:00" +%s` + 86400 - `date +%s`);
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed at 4 AM.";
+        sleep $$SECS
+        while true; do
+          backup_dir=/backup;
+          mkdir -p $$backup_dir;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of zigbee2mqtt...";
+
+          # Request backup
+          mosquitto_pub -h mqtt -p 1883 \
+            -t zigbee2mqtt/bridge/request/backup \
+            -m "{}"
+          
+          # Wait for response and save the binary string as a zip file
+          mosquitto_sub -h mqtt -p 1883 \
+            -t zigbee2mqtt/bridge/response/backup -C 1 | \
+          jq -r '.data.zip' | base64 -d > $$backup_dir/z2m_backup_$(date +%Y-%m-%d_%H-%M-%S).zip
+
+          # Remove old backups older than RETENTION_DAYS
+          find $$backup_dir -iname "z2m_backup_*.zip" -mtime +{{backup_retention_days}} -exec rm -rf {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in {{backup_frequency}}.";
+          sleep {{backup_frequency}};
+        done
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
   {{/use_z2m}}
+  
+  backup_ha:
+    <<: *default-opts
+    image: alpine:latest
+    volumes:
+      - backup_dir:/backup
+      - ha_config:/config
+    command:
+      - sh
+      - -c
+      - | 
+        SECS=$$(expr `date -d "04:00" +%s` + 86400 - `date +%s`);
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed at 4 AM.";
+        sleep $$SECS
+        while true; do
+          backup_dir=/backup;
+          mkdir -p $$backup_dir;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Moving backup of Home Assistant...";
+
+          latest_backup=$$(ls -t /config/backups/*.tar | head -n 1)
+          if [ -f "$$latest_backup" ]; then
+            mv "$$latest_backup" "$$backup_dir/ha_backup_$(date +%Y-%m-%d_%H-%M-%S).tar"
+
+            # Remove old backups older than RETENTION_DAYS
+            find $$backup_dir -iname "z2m_backup_*.zip" -mtime +{{backup_retention_days}} -exec rm -rf {} \;
+            echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in {{backup_frequency}}.";
+          else
+            echo "No backup file found in HA backup directory."
+          fi
+          sleep {{backup_frequency}};
+        done
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
 
 networks:
   proxy_network:
@@ -215,3 +292,17 @@ volumes:
       o: bind
     {{/nfs_share_ip}}
   {{/use_z2m}}
+
+  backup_dir:
+    driver: local
+    driver_opts:
+    {{#nfs_share_ip}}
+      device: ":{{{host_backup}}}"
+      type: nfs
+      o: addr={{nfs_share_ip}},rw,sync,nfsvers=4.1
+    {{/nfs_share_ip}}
+    {{^nfs_share_ip}}
+      device: {{{host_backup}}}
+      type: none
+      o: bind
+    {{/nfs_share_ip}}
