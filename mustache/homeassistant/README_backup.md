@@ -1,2 +1,2 @@
 ## HA & z2m backup
-Backup is created automatically for z2m always at 4 am. But for home assistant the automatic backup (starting with 2025.1) needs to be setup. Don't forget to save the encryption code.
+Backup is created automatically for z2m always at 4 am. But for home assistant the automatic backup (starting with 2025.1) needs to be setup and it starts at 4:45AM. The backup is then moved in an other directory at 5AM and kept for `RETENTION_DAYS`. Don't forget to save the encryption code.
