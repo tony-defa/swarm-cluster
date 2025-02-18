@@ -80,9 +80,11 @@ services:
     volumes:
       - z2m_data:/app/data
       - backup_dir:/backups
+      {{#constrain_z2m_to}}
       - /run/udev:/run/udev:ro
       # Make sure this matched your adapter location
       - {{zigbee_device}}:/dev/ttyACM0
+      {{/constrain_z2m_to}}
     networks:
       - proxy_network
       - mqtt
@@ -104,9 +106,11 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+      {{#constrain_z2m_to}}
       placement:
         constraints:
-          - node.labels.zigbee == dongle
+          - node.hostname == {{{constrain_z2m_to}}}
+      {{/constrain_z2m_to}}
       restart_policy:
         condition: any
         delay: 60s
@@ -116,7 +120,8 @@ services:
         traefik.http.routers.{{service_name}}-z2m.rule: {{#z2m_routing_rule}}{{{z2m_routing_rule}}}{{/z2m_routing_rule}}{{^z2m_routing_rule}}Host(`wordpress.host.local`){{/z2m_routing_rule}}
         traefik.http.routers.{{service_name}}-z2m.service: {{service_name}}-z2m
         traefik.http.services.{{service_name}}-z2m.loadbalancer.server.port: 8080
-
+  
+  {{#constrain_z2m_to}}
   dmm:
     image: docker:latest
     entrypoint: docker
@@ -138,10 +143,11 @@ services:
       mode: global
       placement:
         constraints:
-          - node.labels.zigbee == dongle
+          - node.hostname == {{{constrain_z2m_to}}}
       restart_policy:
         condition: any
-  
+  {{/constrain_z2m_to}}
+
   backup_z2m:
     <<: *default-opts
     image: eclipse-mosquitto:latest

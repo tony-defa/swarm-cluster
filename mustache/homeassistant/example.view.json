@@ -38,6 +38,7 @@
     "backup_frequency": 86400,
     "use_z2m": true,
     "zigbee_device": "/dev/ttyUSB0",
+    "constrain_z2m_to": "node-1",
     "gelf_address": null,
     "nfs_share_ip": null
 }
