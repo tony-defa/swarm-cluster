@@ -10,6 +10,11 @@ services:
     volumes:
       - immich_upload_data:/usr/src/app/upload
       - /etc/localtime:/etc/localtime:ro
+    environment:
+      DB_PASSWORD_FILE: /run/secrets/immich_db_password
+    secrets:
+      - source: immich_db_password
+        target: immich_db_password
     env_file:
       - .env
     networks:
