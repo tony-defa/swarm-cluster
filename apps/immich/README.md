@@ -17,9 +17,7 @@ Mandatory stacks:
 No pre-configured data folder available.
 
 ### Create docker secrets
-Create Docker secrets for sensitive data.
-
-- `immich_db_password`: PostgreSQL database password.
+No docker secrets are required.
 
 ### Create network
 No network needs to be created.
