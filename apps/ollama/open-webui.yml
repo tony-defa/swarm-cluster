@@ -1,0 +1,50 @@
+version: '3.8'
+
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+
+services:
+  open-webui:
+    <<: *default-opts
+    image: ghcr.io/open-webui/open-webui:${OPEN_WEBUI_TAG:-main}
+    volumes:
+      - ./litellm-config.yaml:/app/backend/data/litellm/config.yaml
+      - webui_data:/app/backend/data
+    ports:
+      - ${OLLAMA_WEBUI_PORT:-3000}:8080
+    environment:
+      - OLLAMA_API_BASE_URL=http://ollama:11434/api
+    networks:
+      - ollama_network
+      - proxy_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.open-webui.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.open-webui.rule: Host(`${WEBUI_DOMAIN:-webui.host.local}`)
+        traefik.http.routers.open-webui.service: open-webui
+        traefik.http.services.open-webui.loadbalancer.server.port: 8080
+
+networks:
+  ollama_network:
+    external: true
+    name: ollama_ollama_network
+  
+  proxy_network:
+    external: true
+
+volumes:
+  webui_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_WEBUI_DATA}
+      type: none
+      o: bind
