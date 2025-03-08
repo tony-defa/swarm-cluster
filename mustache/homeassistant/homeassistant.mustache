@@ -1,0 +1,314 @@
+x-default-opts: &default-opts
+  {{#env_file}}
+  env_file:
+    {{env_file}}
+  {{/env_file}}
+  logging:
+  {{^gelf_address}}
+    options:
+      max-size: "1m"
+  {{/gelf_address}}
+  {{#gelf_address}}
+    driver: "gelf"
+    options:
+      gelf-address: "{{{gelf_address}}}"
+  {{/gelf_address}}
+
+services:
+  ha:
+    <<: *default-opts
+    image: homeassistant/home-assistant:{{ha_tag}}
+    volumes:
+      - ha_config:/config
+      - backup_dir:/backups
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+    networks:
+      - macvlan_swarm
+      - proxy_network
+      {{#use_z2m}}
+      - mqtt
+      {{/use_z2m}}
+    {{#ha_publish_ports}}
+    ports:
+    {{#ha_ports}}
+      - target: {{target}}
+        published: {{published}}
+        protocol: {{protocol}}
+        mode: {{mode}}
+    {{/ha_ports}}
+    {{/ha_publish_ports}}
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: any
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.{{service_name}}-ha.entrypoints: {{#entrypoint}}{{entrypoint}}{{/entrypoint}}{{^entrypoint}}websecure{{/entrypoint}}
+        traefik.http.routers.{{service_name}}-ha.rule: {{#ha_routing_rule}}{{{ha_routing_rule}}}{{/ha_routing_rule}}{{^ha_routing_rule}}Host(`wordpress.host.local`){{/ha_routing_rule}}
+        traefik.http.routers.{{service_name}}-ha.service: {{service_name}}-ha
+        traefik.http.services.{{service_name}}-ha.loadbalancer.server.port: 8123
+
+  {{#use_z2m}}
+  mqtt:
+    <<: *default-opts
+    image: eclipse-mosquitto:{{mqtt_tag}}
+    networks:
+      - mqtt
+    {{#mqtt_publish_ports}}
+    ports:
+    {{#mqtt_ports}}
+      - target: {{target}}
+        published: {{published}}
+        protocol: {{protocol}}
+        mode: {{mode}}
+    {{/mqtt_ports}}
+    {{/mqtt_publish_ports}}
+    volumes:
+      - mqtt_config:/mosquitto/config:rw
+      - mqtt_data:/mosquitto/data:rw
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  zigbee2mqtt:
+    <<: *default-opts
+    image: koenkk/zigbee2mqtt:{{z2m_tag}}
+    volumes:
+      - z2m_data:/app/data
+      - backup_dir:/backups
+      {{#constrain_z2m_to}}
+      - /run/udev:/run/udev:ro
+      # Make sure this matched your adapter location
+      - {{zigbee_device}}:/dev/ttyACM0
+      {{/constrain_z2m_to}}
+    networks:
+      - proxy_network
+      - mqtt
+    {{#z2m_publish_ports}}
+    ports:
+    {{#z2m_ports}}
+      - target: {{target}}
+        published: {{published}}
+        protocol: {{protocol}}
+        mode: {{mode}}
+    {{/z2m_ports}}
+    {{/z2m_publish_ports}}
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8080 || exit 1
+      interval: 60s
+      timeout: 10s
+      retries: 5
+      start_period: 5m
+    deploy:
+      mode: replicated
+      replicas: 1
+      {{#constrain_z2m_to}}
+      placement:
+        constraints:
+          - node.hostname == {{{constrain_z2m_to}}}
+      {{/constrain_z2m_to}}
+      restart_policy:
+        condition: any
+        delay: 60s
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.{{service_name}}-z2m.entrypoints: {{#entrypoint}}{{entrypoint}}{{/entrypoint}}{{^entrypoint}}websecure{{/entrypoint}}
+        traefik.http.routers.{{service_name}}-z2m.rule: {{#z2m_routing_rule}}{{{z2m_routing_rule}}}{{/z2m_routing_rule}}{{^z2m_routing_rule}}Host(`wordpress.host.local`){{/z2m_routing_rule}}
+        traefik.http.routers.{{service_name}}-z2m.service: {{service_name}}-z2m
+        traefik.http.services.{{service_name}}-z2m.loadbalancer.server.port: 8080
+  
+  {{#constrain_z2m_to}}
+  dmm:
+    image: docker:latest
+    entrypoint: docker
+    command: |
+      run
+      -i
+      --rm
+      --privileged
+      --cgroupns=host
+      --pid=host
+      --userns=host
+      -v /sys:/host/sys
+      -v /var/run/docker.sock:/var/run/docker.sock
+      -v /dev:/dev
+      ghcr.io/allfro/allfro/device-mapping-manager:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.hostname == {{{constrain_z2m_to}}}
+      restart_policy:
+        condition: any
+  {{/constrain_z2m_to}}
+
+  backup_z2m:
+    <<: *default-opts
+    image: eclipse-mosquitto:latest
+    volumes:
+      - backup_dir:/backup
+    networks:
+      - mqtt
+    command:
+      - sh
+      - -c
+      - | 
+        apk --update add jq
+        SECS=$$(expr `date -d "04:00" +%s` + 86400 - `date +%s`);
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed at 4 AM.";
+        sleep $$SECS
+        while true; do
+          backup_dir=/backup;
+          mkdir -p $$backup_dir;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of zigbee2mqtt...";
+
+          # Request backup
+          mosquitto_pub -h mqtt -p 1883 \
+            -t zigbee2mqtt/bridge/request/backup \
+            -m "{}"
+          
+          # Wait for response and save the binary string as a zip file
+          mosquitto_sub -h mqtt -p 1883 \
+            -t zigbee2mqtt/bridge/response/backup -C 1 | \
+          jq -r '.data.zip' | base64 -d > $$backup_dir/z2m_backup_$$(date +%Y-%m-%d_%H-%M-%S).zip
+
+          # Remove old backups older than RETENTION_DAYS
+          find $$backup_dir -iname "z2m_backup_*.zip" -mtime +{{backup_retention_days}} -exec rm -rf {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in {{backup_frequency}}.";
+          sleep {{backup_frequency}};
+        done
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+  {{/use_z2m}}
+  
+  backup_ha:
+    <<: *default-opts
+    image: alpine:latest
+    volumes:
+      - backup_dir:/backup
+      - ha_config:/config
+    command:
+      - sh
+      - -c
+      - | 
+        SECS=$$(expr `date -d "05:00" +%s` + 86400 - `date +%s`);
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed at 4 AM.";
+        sleep $$SECS
+        while true; do
+          backup_dir=/backup;
+          mkdir -p $$backup_dir;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Moving backup of Home Assistant...";
+
+          latest_backup=$$(ls -t /config/backups/*.tar | head -n 1)
+          if [ -f "$$latest_backup" ]; then
+            cp "$$latest_backup" "$$backup_dir/ha_backup_$$(date +%Y-%m-%d_%H-%M-%S).tar"
+
+            # Remove old backups older than RETENTION_DAYS
+            find $$backup_dir -iname "ha_backup_*.tar" -mtime +{{backup_retention_days}} -exec rm -rf {} \;
+            echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in {{backup_frequency}}.";
+          else
+            echo "No backup file found in HA backup directory."
+          fi
+          sleep {{backup_frequency}};
+        done
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
+networks:
+  proxy_network:
+    external: true
+  
+  macvlan_swarm:
+    external: true
+
+  host_network:
+    external: true
+    name: "host"
+  
+  {{#use_z2m}}
+  mqtt:
+    driver: overlay
+  {{/use_z2m}}
+
+volumes:
+  ha_config:
+    driver: local
+    driver_opts:
+    {{#nfs_share_ip}}
+      device: ":{{{host_ha_data}}}"
+      type: nfs
+      o: addr={{nfs_share_ip}},rw,sync,nfsvers=4.1
+    {{/nfs_share_ip}}
+    {{^nfs_share_ip}}
+      device: {{{host_ha_data}}}
+      type: none
+      o: bind
+    {{/nfs_share_ip}}
+
+  {{#use_z2m}}
+  z2m_data:
+    driver: local
+    driver_opts:
+    {{#nfs_share_ip}}
+      device: ":{{{host_z2m}}}"
+      type: nfs
+      o: addr={{nfs_share_ip}},rw,sync,nfsvers=4.1
+    {{/nfs_share_ip}}
+    {{^nfs_share_ip}}
+      device: {{{host_z2m}}}
+      type: none
+      o: bind
+    {{/nfs_share_ip}}
+
+  mqtt_data:
+    driver: local
+    driver_opts:
+    {{#nfs_share_ip}}
+      device: ":{{{host_mqtt_data}}}"
+      type: nfs
+      o: addr={{nfs_share_ip}},rw,sync,nfsvers=4.1
+    {{/nfs_share_ip}}
+    {{^nfs_share_ip}}
+      device: {{{host_mqtt_data}}}
+      type: none
+      o: bind
+    {{/nfs_share_ip}}
+
+  mqtt_config:
+    driver: local
+    driver_opts:
+    {{#nfs_share_ip}}
+      device: ":{{{host_mqtt_config}}}"
+      type: nfs
+      o: addr={{nfs_share_ip}},rw,sync,nfsvers=4.1
+    {{/nfs_share_ip}}
+    {{^nfs_share_ip}}
+      device: {{{host_mqtt_config}}}
+      type: none
+      o: bind
+    {{/nfs_share_ip}}
+  {{/use_z2m}}
+
+  backup_dir:
+    driver: local
+    driver_opts:
+    {{#nfs_share_ip}}
+      device: ":{{{host_backup}}}"
+      type: nfs
+      o: addr={{nfs_share_ip}},rw,sync,nfsvers=4.1
+    {{/nfs_share_ip}}
+    {{^nfs_share_ip}}
+      device: {{{host_backup}}}
+      type: none
+      o: bind
+    {{/nfs_share_ip}}
