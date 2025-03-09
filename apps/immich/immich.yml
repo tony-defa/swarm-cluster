@@ -10,6 +10,11 @@ services:
     volumes:
       - immich_upload_data:/usr/src/app/upload
       - /etc/localtime:/etc/localtime:ro
+    environment:
+      DB_PASSWORD_FILE: /run/secrets/immich_db_password
+    secrets:
+      - source: immich_db_password
+        target: immich_db_password
     env_file:
       - .env
     networks:
@@ -63,12 +68,15 @@ services:
     <<: *default-opts
     image: docker.io/tensorchord/pgvecto-rs:pg14-v0.2.0@sha256:739cdd626151ff1f796dc95a6591b55a714f341c737e27f045019ceabf8e8c52
     environment:
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD_FILE: /run/secrets/immich_db_password
       POSTGRES_USER: ${DB_USERNAME:-postgres}
       POSTGRES_DB: ${DB_DATABASE_NAME:-immich}
       POSTGRES_INITDB_ARGS: '--data-checksums'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    secrets:
+      - source: immich_db_password
+        target: immich_db_password
     healthcheck:
       test: >-
         pg_isready --dbname="$${POSTGRES_DB}" --username="$${POSTGRES_USER}" || exit 1;
@@ -94,6 +102,10 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
+
+secrets:
+  immich_db_password:
+    external: true
 
 networks:
   immich_network:
