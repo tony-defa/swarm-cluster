@@ -42,7 +42,7 @@ A network named `gitlab_network` is automatically created when deploying the `gi
 
 ## Other notes
 ### Runner environment variables
-In order for the runner stack to register to the gitlab instance, a token is required. This can be obtained from the GitLab instance after it has fully started. See [how to obtain a token here](https://docs.gitlab.com/runner/register/index.html). The token can then be added to the `RUNNER_REGISTRATION_TOKEN` variable in the `.env` file.
+In order for the runner stack to register to the gitlab instance, a token is required. This can be obtained from the GitLab instance after it has fully started. See [how to obtain a token here](https://docs.gitlab.com/runner/register/index.html). The token can then be added to the `RUNNER_AUTHENTICATION_TOKEN` variable in the `.env` file. Having done that a runner instance can be started by deploying the `gitlab-runner.yml` stack.
 
 ### Creating backups
 Backups are created according to the `BACKUP_FREQUENCY` environment variable and are retained for the amount of seconds configured with `gitlab_rails['backup_keep_time']` in the omnibus configuration file. 

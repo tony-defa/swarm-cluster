@@ -18,14 +18,13 @@ services:
       - register
       - --non-interactive
       - --url=http://gitlab/
-      - --registration-token=${RUNNER_REGISTRATION_TOKEN}
+      - --token=${RUNNER_AUTHENTICATION_TOKEN}
       - --executor=docker
-      - --docker-image=alpine:latest
+      - --docker-image=docker:stable
+      - --docker-privileged true      
+      - --docker-volumes=/var/run/docker.sock:/var/run/docker.sock
       - --description=gitlab-runner
-      - --tag-list="test-cicd,dockercicd"
-      - --run-untagged=true
-      - --locked=false
-      - --limit=1
+      - --limit=${GITLAB_RUNNER_TAG}
       - --docker-network-mode=gitlab_gitlab_network
     volumes:
       - gitlab_runner_config:/etc/gitlab-runner
