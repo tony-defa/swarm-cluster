@@ -16,9 +16,6 @@ A centralized storage solution is required for persistent model storage.
 Mandatory stacks are:
 - `system/traefik.yml`
 
-Optional stacks:
-- `system/monitoring.yml`
-
 ### Create pre-configured data folder
 No pre-configured data folder available. The required directories will be created automatically based on the HOST paths defined in the .env file.
 
