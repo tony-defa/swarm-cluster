@@ -1,4 +1,6 @@
 x-default-opts: &default-opts
+  env_file:
+    .env
   logging:
     options:
       max-size: "1m"
@@ -11,21 +13,29 @@ services:
       - music_assistant_data:/data/
     networks:
       - macvlan_swarm # Connect to the same network as Home Assistant
+      - proxy_network
     cap_add:
       - SYS_ADMIN
       - DAC_READ_SEARCH
     security_opt:
       - apparmor:unconfined
-    environment:
-      - LOG_LEVEL=${LOG_LEVEL:-info}
     deploy:
       mode: replicated
       replicas: 1
       restart_policy:
         condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.music-assistant.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.music-assistant.rule: Host(`${DOMAIN:-music.host.local}`)
+        traefik.http.routers.music-assistant.service: music-assistant
+        traefik.http.services.music-assistant.loadbalancer.server.port: 8095
 
 networks:
   macvlan_swarm:
+    external: true
+
+  proxy_network:
     external: true
 
 volumes:
