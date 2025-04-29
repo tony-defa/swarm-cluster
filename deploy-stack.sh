@@ -15,10 +15,22 @@ if [ ! -f "$STACK_FILE" ]; then
   exit 2
 fi
 
+# Check for override stack file
+OVERRIDE_FILE="$(dirname "$STACK_FILE")/override.$(basename "$STACK_FILE")"
+if [ -f "$OVERRIDE_FILE" ]; then
+  echo "Found override stack file: $OVERRIDE_FILE"
+  read -rp "Do you want to deploy from the override file? (Y/n): " USE_OVERRIDE
+  if [[ ! "$USE_OVERRIDE" =~ ^[Nn]$ ]]; then
+    STACK_FILE="$OVERRIDE_FILE"
+  fi
+fi
+
 # Derive stack name from filename if not provided
 if [ -z "$STACK_NAME" ]; then
-  STACK_NAME=$(basename "$STACK_FILE")
-  STACK_NAME="${STACK_NAME%.*}"
+  BASE_NAME=$(basename "$STACK_FILE")
+  # Remove "override." if present
+  BASE_NAME="${BASE_NAME#override.}"
+  STACK_NAME="${BASE_NAME%.*}"
 fi
 
 # Get the directory of the stack file
