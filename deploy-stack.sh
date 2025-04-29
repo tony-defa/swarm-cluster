@@ -51,7 +51,7 @@ if [ -f "$ENV_FILE" ]; then
   done
 
   # Deploy using compose config
-  docker compose -f "$STACK_FILE" config | grep -v '^name' | docker stack deploy --with-registry-auth -c - "$STACK_NAME"
+  docker compose -f "$STACK_FILE" config | grep -v '^name' | sed '/published:/ s/"//g' | docker stack deploy --with-registry-auth -c - "$STACK_NAME"
 else
   echo "No .env file found in $STACK_DIR – using direct stack deploy"
   docker stack deploy --with-registry-auth -c "$STACK_FILE" "$STACK_NAME"
