@@ -75,7 +75,7 @@ services:
 
   backup:
     <<: *default-opts
-    image: alpine:latest
+    image: postgres:${POSTGRES_TAG}
     volumes:
       - n8n_data:/n8n_data
       - n8n_db_data:/n8n_db_data
@@ -89,7 +89,6 @@ services:
           backup_dir=/backup/n8n_$$(date +'%Y%m%d_%H%M%S');
           mkdir -p $$backup_dir;
           echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of n8n data and database...";
-          # Assuming pg_dump is available in alpine image or can be added
           # Use environment variables loaded from secrets
           PGPASSWORD=$$(cat /run/secrets/n8n_db_password) pg_dump -U $$(cat /run/secrets/n8n_db_user) -d $$POSTGRES_DB -h db > $$backup_dir/db.sql;
           tar -C /n8n_data/ -cvzf $$backup_dir/n8n_data.tar.gz .;
