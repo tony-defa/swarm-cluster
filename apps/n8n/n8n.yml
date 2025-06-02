@@ -99,8 +99,6 @@ services:
     secrets:
       - n8n_db_user
       - n8n_db_password
-    networks:
-      - n8n_network
     deploy:
       restart_policy:
         condition: on-failure
