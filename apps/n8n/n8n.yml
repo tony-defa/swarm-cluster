@@ -1,0 +1,150 @@
+version: '3.8'
+
+x-default-opts: &default-opts
+  env_file:
+    - .env
+  logging:
+    options:
+      max-size: "1m"
+
+services:
+  n8n:
+    <<: *default-opts
+    image: n8n:latest
+    volumes:
+      - n8n_data:/home/node/.n8n
+    environment:
+      - DB_TYPE=postgres
+      - DB_POSTGRES_HOST=${POSTGRES_HOST}
+      - DB_POSTGRES_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRES_USER_FILE=/run/secrets/n8n_db_user
+      - DB_POSTGRES_PASSWORD_FILE=/run/secrets/n8n_db_password
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER_FILE=/run/secrets/n8n_basic_auth_user
+      - N8N_BASIC_AUTH_PASSWORD_FILE=/run/secrets/n8n_basic_auth_password
+      - N8N_EDITOR_BASE_URL=http://${DOMAIN}
+    secrets:
+      - n8n_db_user
+      - n8n_db_password
+      - n8n_basic_auth_user
+      - n8n_basic_auth_password
+    networks:
+      - n8n_network
+      - proxy_network
+    ports:
+      - target: 5678
+        published: 5678
+        mode: ingress
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.n8n.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.n8n.rule: Host(`${DOMAIN-n8n.host.local}`)
+        traefik.http.services.n8n.loadbalancer.server.port: 5678
+      resources:
+        limits:
+          memory: 512M
+
+  db:
+    <<: *default-opts
+    image: postgres:${POSTGRES_TAG}
+    networks:
+      - n8n_network
+    volumes:
+      - n8n_db_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER_FILE=/run/secrets/n8n_db_user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/n8n_db_password
+    secrets:
+      - n8n_db_user
+      - n8n_db_password
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 256M
+
+  backup:
+    <<: *default-opts
+    image: alpine:latest
+    volumes:
+      - n8n_data:/n8n_data
+      - n8n_db_data:/n8n_db_data
+      - n8n_backup:/backup
+    command:
+      - sh
+      - -c
+      - |
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed in $$BACKUP_FREQUENCY.";
+        while true; do
+          backup_dir=/backup/n8n_$$(date +'%Y%m%d_%H%M%S');
+          mkdir -p $$backup_dir;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of n8n data and database...";
+          # Assuming pg_dump is available in alpine image or can be added
+          # Use environment variables loaded from secrets
+          PGPASSWORD=$$(cat /run/secrets/n8n_db_password) pg_dump -U $$(cat /run/secrets/n8n_db_user) -d $$POSTGRES_DB -h db > $$backup_dir/db.sql;
+          tar -C /n8n_data/ -cvzf $$backup_dir/n8n_data.tar.gz .;
+          find /backup/n8n_* -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in $$BACKUP_FREQUENCY.";
+          sleep $$BACKUP_FREQUENCY;
+        done
+    secrets:
+      - n8n_db_user
+      - n8n_db_password
+    networks:
+      - n8n_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+      resources:
+        limits:
+          memory: 128M
+
+networks:
+  proxy_network:
+    external: true
+
+  n8n_network:
+    driver: overlay
+
+volumes:
+  n8n_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_N8N_DATA}
+      type: none
+      o: bind
+
+  n8n_db_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_N8N_DB_DATA}
+      type: none
+      o: bind
+
+  n8n_backup:
+    driver: local
+    driver_opts:
+      device: ${HOST_N8N_BACKUP}
+      type: none
+      o: bind
+
+secrets:
+  n8n_db_user:
+    external: true
+  n8n_db_password:
+    external: true
+  n8n_basic_auth_user:
+    external: true
+  n8n_basic_auth_password:
+    external: true
