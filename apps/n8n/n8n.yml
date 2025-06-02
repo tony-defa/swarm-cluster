@@ -10,7 +10,7 @@ x-default-opts: &default-opts
 services:
   n8n:
     <<: *default-opts
-    image: n8n:latest
+    image: docker.n8n.io/n8nio/n8n:${N8N_TAG}
     volumes:
       - n8n_data:/home/node/.n8n
     environment:
