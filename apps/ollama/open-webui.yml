@@ -31,15 +31,17 @@ services:
   mcpo:
     <<: *default-opts
     image: ghcr.io/open-webui/mcpo:${MCPO_TAG:-main}
-    command: 
-      - --server-type "${SERVER_TYPE:-streamable_http}"
+    command: --config /app/config/.mcpServers.json
     networks:
       - ollama_network
     configs:
       - source: mcp_config
         target: /app/config/.mcpServers.json
-    environment:
-      - CONFIG_PATH=/app/config/.mcpServers.json
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
 
 configs:
   mcp_config:
