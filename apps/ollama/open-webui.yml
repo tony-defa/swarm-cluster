@@ -32,7 +32,6 @@ services:
     <<: *default-opts
     image: ghcr.io/open-webui/mcpo:${MCPO_TAG:-main}
     command: 
-      - --port 8000
       - --server-type "${SERVER_TYPE:-streamable_http}"
     networks:
       - ollama_network
