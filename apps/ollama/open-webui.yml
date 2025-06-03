@@ -28,6 +28,25 @@ services:
         traefik.http.routers.open-webui.service: open-webui
         traefik.http.services.open-webui.loadbalancer.server.port: 8080
 
+  mcpo:
+    <<: *default-opts
+    image: ghcr.io/open-webui/mcpo:${MCPO_TAG:-main}
+    command: 
+      - --port 8000
+      - --server-type "${SERVER_TYPE:-streamable_http}"
+    networks:
+      - ollama_network
+    configs:
+      - source: mcp_config
+        target: /app/config/.mcpServers.json
+    environment:
+      - CONFIG_PATH=/app/config/.mcpServers.json
+
+configs:
+  mcp_config:
+    file: ./config/.json
+    name: mcp-servers-1
+
 networks:
   ollama_network:
     external: true
