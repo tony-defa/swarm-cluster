@@ -5,7 +5,7 @@ MariaDB is a community-developed, commercially supported fork of the MySQL relat
 ### `mariadb.yml`
 Contains the database and a service that creates a db dump in a regular interval.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

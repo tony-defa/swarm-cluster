@@ -5,7 +5,7 @@ MariaDB is an open source, community-developed SQL database server that is widel
 ### `mariadb.yml`
 Contains the database as master and a slave service. It also contains a service that creates a db dump in a regular interval.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

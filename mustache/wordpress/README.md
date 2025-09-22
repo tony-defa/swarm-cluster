@@ -5,7 +5,7 @@ The WordPress rich content management system can utilize plugins, widgets, and t
 ### `wordpress.mustache`
 The template contains both wordpress and the underling database. There is also a service, that backups the wp files and database tables.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

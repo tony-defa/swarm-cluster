@@ -5,7 +5,7 @@ Metabase is an open-source business intelligence platform. You can use Metabase 
 ### `metabase.yml`
 Contains the metabase service.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

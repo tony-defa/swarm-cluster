@@ -5,7 +5,7 @@ Tiny Go webserver that prints os information and HTTP request to output.
 ### `whoami.yml`
 Contains only the whoami service.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is not required.
 

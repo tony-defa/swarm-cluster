@@ -5,7 +5,7 @@ The free artifact repository with universal format support.
 ### `nexus.yml`
 Contains the nexus3 application
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

@@ -5,7 +5,7 @@ A safe home for all your data. Access & share your files, calendars, contacts, m
 ### `nextcloud.yml`
 Contains only the application without the underlying database and also provides a backup service running on an alpine image.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

@@ -5,7 +5,7 @@ Redis is an open-source in-memory storage, used as a distributed, in-memory keyâ
 ### `redis.yml`
 Contains a single Redis instance and RedisInsight as a separate service.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

@@ -5,7 +5,7 @@ Eclipse Mosquitto is an open source message broker which implements MQTT version
 ### `mosquitto.yml`
 Contains only a basic mosquitto service.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

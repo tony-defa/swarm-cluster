@@ -5,7 +5,7 @@ Graylog is a leading centralized log management solution for capturing, storing,
 ### `graylog.yml`
 Contains graylog and the required backend for running properly.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

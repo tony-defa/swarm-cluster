@@ -5,7 +5,7 @@ Elasticsearch is a search engine based on the Lucene library. It provides a dist
 ### `elasticsearch.yml`
 Contains a single elasticsearch node and kibana as a separate service.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

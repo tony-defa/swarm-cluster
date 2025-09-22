@@ -5,7 +5,7 @@ This container can crawl for logfiles and rotate them. It is a side-car containe
 ### `logrotate.yml`
 Contains only the logrotate service.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is not required.
 

@@ -8,7 +8,7 @@ Contains the GitLab application and a script to create backups.
 ### `gitlab-runner.yml`
 Starts a gitlab-runner instance and a second throw away gitlab-runner instance that registers the first runner and then shuts down.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

@@ -5,7 +5,7 @@ Docker Image Update Notifier is a CLI application written in Go and delivered as
 ### `diun.yml`
 Contains only the diun service.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is not required.
 
