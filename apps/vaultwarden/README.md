@@ -4,7 +4,7 @@ Vaultwarden is a lightweight, unofficial Bitwarden server implementation written
 ### `vaultwarden.yml`
 This file defines the Docker Compose stack for Vaultwarden. It includes the Vaultwarden service, volume definitions for persistent data, and network configuration to connect to the Traefik proxy.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

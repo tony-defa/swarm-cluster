@@ -5,7 +5,7 @@ Pi-hole is a Linux network-level advertisement and Internet tracker blocking app
 ### `pihole.yml`
 Contains the pi-hole software.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

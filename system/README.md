@@ -12,7 +12,7 @@ Contains monitoring services like prometheus, grafana, etc.
 ### `traefik.yml`
 Contains traefik configured for execution with docker swarm.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required for the following stacks:
 - `monitoring.yml`

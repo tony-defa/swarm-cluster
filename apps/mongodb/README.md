@@ -5,7 +5,7 @@ MongoDB is a document-oriented NoSQL database used for high volume data storage.
 ### `mongodb.yml`
 Contains the database, mongo-express the web based admin interface and an exporter for prometheus.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

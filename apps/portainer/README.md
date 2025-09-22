@@ -5,7 +5,7 @@ Portainer enables centralized configuration, management and security of Kubernet
 ### `portainer.yml`
 Contains portainer itself and the agent that runs on every node. An additional service is used backup the portainer data once a week.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

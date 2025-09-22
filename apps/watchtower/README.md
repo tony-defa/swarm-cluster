@@ -5,7 +5,7 @@ With watchtower you can update the running version of your containerized app sim
 ### `watchtower.yml`
 Contains only the watchtower service that runs in global mode.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is not required.
 

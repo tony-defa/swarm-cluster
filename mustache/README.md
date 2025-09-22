@@ -10,7 +10,7 @@ There are several ways to install mustache. Find the way that suits you best by 
 
 ## Deploy a stack
 
-The following paragraphs describe the general steps to take when creating a stack from a mustache template. In some cases further perquisites are described in the `README.md`-file of the stack directory.
+The following paragraphs describe the general steps to take when creating a stack from a mustache template. In some cases further prerequisites are described in the `README.md`-file of the stack directory.
 
 ### 0. Make a decision
 Since the templates allows for multiple stacks to be created from the same template, a name for the stack needs to be chosen. The name that will be used for the examples in the following paragraphs is `my-project`. Replace this with the name of your choice.

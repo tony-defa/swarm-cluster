@@ -20,7 +20,7 @@ This file contains the data in JSON format that is injected into the `homeassist
 
 To customize the stack, copy `example.view.json` to `.view.json` (or add e.g. `.test` prefix to the filename to run multiple capsulated stacks) and modify the values according to your environment and requirements.
 
-## Perquisites
+## Prerequisites
 
 ### Storage
 

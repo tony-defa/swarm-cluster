@@ -5,7 +5,7 @@ n8n is a fair-code workflow automation platform.
 ### `n8n.yml`
 Contains the n8n service, a PostgreSQL database service, and a backup service.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required for persistent data and backups.
 

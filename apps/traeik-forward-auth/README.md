@@ -5,7 +5,7 @@ A minimal forward authentication service that provides OAuth/SSO login and authe
 ### `forward-auth.yml`
 Contains only the traefik forward auth service.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is not required.
 

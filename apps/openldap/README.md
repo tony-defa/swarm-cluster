@@ -5,7 +5,7 @@ OpenLDAP Software is an open source implementation of the Lightweight Directory 
 ### `openldap.yml`
 Contains OpenLDAP, a WebUI, Self-Service-Password (SSP) a UI that permits password changes and data backup from [osixia](https://hub.docker.com/u/osixia). 
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is not required.
 

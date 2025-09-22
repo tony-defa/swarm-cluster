@@ -5,7 +5,7 @@ nginx ("engine x") is an HTTP web server, reverse proxy, content cache, load bal
 ## `nginx.yml`
 Contains the nginx web server, that is primarily intended to serve static files. There is also a script, that backups the files.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

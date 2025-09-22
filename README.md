@@ -21,7 +21,7 @@ Tasks or jobs can be stored here.
 
 ## Preparing the stack
 
-There are a few general steps necessary to deploy a stack. In some cases further perquisites are described in the `README.md`-file of the stack directory.
+There are a few general steps necessary to deploy a stack. In some cases further prerequisites are described in the `README.md`-file of the stack directory.
 
 The following paragraphs describe the general steps to take when starting a stack.
 

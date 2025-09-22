@@ -5,7 +5,7 @@ XWiki is a free wiki software platform written in Java with a design emphasis on
 ### `xwiki.yml`
 Contains only the application without the underlying database and also provides a backup service running on an alpine image.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 

@@ -5,7 +5,7 @@ Jenkins is an open source automation server which enables developers around the 
 ### `jenkins.yml`
 Contains the jenkins application and also provides a backup service running on an alpine image.
 
-## Perquisites
+## Prerequisites
 ### Storage
 A centralized storage solution is required.
 
