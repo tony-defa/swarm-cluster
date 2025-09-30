@@ -21,8 +21,6 @@ Create the following docker secrets for database and basic authentication creden
 
 - `n8n_db_user`: The username for the PostgreSQL database
 - `n8n_db_password`: The password for the PostgreSQL database
-- `n8n_basic_auth_user`: The username for n8n basic authentication
-- `n8n_basic_auth_password`: The password for n8n basic authentication
 
 ### Create network
 No network needs to be created.

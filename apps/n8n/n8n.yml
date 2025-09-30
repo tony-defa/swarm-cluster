@@ -17,15 +17,10 @@ services:
       - DB_POSTGRES_DATABASE=${POSTGRES_DB}
       - DB_POSTGRES_USER_FILE=/run/secrets/n8n_db_user
       - DB_POSTGRES_PASSWORD_FILE=/run/secrets/n8n_db_password
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER_FILE=/run/secrets/n8n_basic_auth_user
-      - N8N_BASIC_AUTH_PASSWORD_FILE=/run/secrets/n8n_basic_auth_password
       - N8N_EDITOR_BASE_URL=http://${DOMAIN}
     secrets:
       - n8n_db_user
       - n8n_db_password
-      - n8n_basic_auth_user
-      - n8n_basic_auth_password
     networks:
       - n8n_network
       - proxy_network
@@ -138,8 +133,4 @@ secrets:
   n8n_db_user:
     external: true
   n8n_db_password:
-    external: true
-  n8n_basic_auth_user:
-    external: true
-  n8n_basic_auth_password:
     external: true
