@@ -10,6 +10,7 @@ readonly EXIT_MUSTACHE_FAILED=4
 readonly SCRIPT_NAME=$(basename "$0")
 
 # Global variables for mustache support
+IS_MUSTACHE=false
 GENERATED_YAML=""
 VIEW_FILE=""
 
@@ -51,7 +52,7 @@ create_secrets() {
 
   # Extract secret names from the top-level secrets section in the YAML content
   local secret_names
-  if [[ "$STACK_FILE" == *.mustache ]]; then
+  if [ "$IS_MUSTACHE" == true ]; then
     # For generated YAML, use echo with yq
     secret_names=$(echo "$GENERATED_YAML" | yq eval '.secrets | keys[]' - 2>/dev/null | tr -d '"')
   else
@@ -127,8 +128,10 @@ deploy_stack() {
   local env_file="$ENV_FILE"
   local compose_file="${STACK_DIR}/.tmp-compose.yml"
 
-  if [[ "$STACK_FILE" == *.mustache ]]; then
+  if [ "$IS_MUSTACHE" == true ]; then
     tee $compose_file <<< "$GENERATED_YAML" >/dev/null 2>&1
+  else 
+    compose_file="$STACK_FILE"
   fi
 
   if [ -f "$env_file" ]; then
@@ -346,7 +349,7 @@ main() {
   derive_stack_name
 
   # Check if this is a mustache template
-  if [[ "$STACK_FILE" == *.mustache ]]; then
+  if [ "$IS_MUSTACHE" == true ]; then
     handle_mustache_template "$STACK_FILE"
   else
     # Handle regular stack file
@@ -356,6 +359,12 @@ main() {
   create_secrets
   deploy_stack
 }
+
+if [[ "$STACK_FILE" == *.mustache ]]; then
+  IS_MUSTACHE=true
+else
+  IS_MUSTACHE=false
+fi
 
 # Run main function with all arguments
 main "$@"
