@@ -1,0 +1,126 @@
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://172.17.0.1:12201"
+
+services:
+  web:
+    <<: *default-opts
+    image: espocrm/espocrm:${ESPCRM_TAG}
+    networks:
+      - proxy_network
+      - espocrm_network
+    volumes:
+      - data:/var/www/html
+    environment:
+      ESPOCRM_DATABASE_PLATFORM: "Mysql"
+      ESPOCRM_DATABASE_HOST:     "db"
+      ESPOCRM_DATABASE_USER:     "${DB_USER}"
+      ESPOCRM_DATABASE_PASSWORD: "${DB_PASSWORD}"
+      ESPOCRM_SITE_URL:          "https://${DOMAIN}"
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.espocrm.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.espocrm.rule: Host(`${DOMAIN:-crm.host.local}`)
+        traefik.http.routers.espocrm.service: espocrm
+        traefik.http.services.espocrm.loadbalancer.server.port: 80
+
+  db:
+    <<: *default-opts
+    image: mariadb:${MARIADB_TAG}
+    networks:
+      - espocrm_network
+    volumes:
+      - db:/var/lib/mysql
+    environment:
+      MARIADB_DATABASE:       ${DB_NAME}
+      MARIADB_USER:           ${DB_USER}
+      MARIADB_PASSWORD:       ${DB_PASSWORD}
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  backup:
+    <<: *default-opts
+    image: mariadb:${MARIADB_TAG}
+    command:
+      - sh
+      - -c
+      - |
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed in $$BACKUP_FREQUENCY.";
+        while true; do
+          backup_dir=/backup/espocrm_$$(date +'%Y%m%d_%H%M%S');
+          mkdir -p "$$backup_dir";
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of EspoCRM data including SQL dump of $$DB_NAME database...";
+          /usr/bin/mariadb-dump -u $$DB_USER --password=$$DB_PASSWORD --host=db --databases $$DB_NAME --no-tablespaces > $$backup_dir/db.sql;
+          tar -C /var/www/html -czf $$backup_dir/files.tar.gz .;
+          find /backup/espocrm_* -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in $$BACKUP_FREQUENCY.";
+          sleep $$BACKUP_FREQUENCY;
+        done
+    volumes:
+      - backup:/backup
+      - data:/var/www/html
+    networks:
+      - espocrm_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
+
+networks:
+  proxy_network:
+    external: true
+
+  espocrm_network:
+    driver: overlay
+
+volumes:
+  data:
+    driver: local
+    driver_opts:
+      device: ${HOST_ESPOCRM_DATA}
+      type: none
+      o: bind
+      # device: ":${HOST_ESPOCRM_DATA?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  db:
+    driver: local
+    driver_opts:
+      device: ${HOST_ESPOCRM_DB}
+      type: none
+      o: bind
+      # device: ":${HOST_ESPOCRM_DB?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  backup:
+    driver: local
+    driver_opts:
+      device: ${HOST_ESPOCRM_BACKUP}
+      type: none
+      o: bind
+      # device: ":${HOST_ESPOCRM_BACKUP?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
