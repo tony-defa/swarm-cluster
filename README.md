@@ -72,16 +72,17 @@ You can deploy a stack either by using the provided helper script (recommended) 
 **Run the deployment script**
 
    ```bash
-   deploy-stack <stack-file.yml> [stack-name]
+   deploy-stack <stack-file.yml|stack-file.mustache> [stack-name]
    ```
 
-   - `<stack-file.yml>`: your compose file (e.g., `spec-proxy.yml`)
+   - `<stack-file.yml|stack-file.mustache>`: your compose file (e.g., `spec-proxy.yml` or `wordpress.mustache`)
    - `[stack-name]`: custom stack name; if omitted, the script uses the filename (without extension)
 
 The script will:
 
 - Detect and parse `.env` if present in the stack directory
 - Create any `HOST_…` folders that don’t yet exist and set their group to `docker`
+- Prompt you to create secrets used by the stack.
 - Deploy the stack with `docker compose ... config | docker stack deploy ...`
 
 ---
