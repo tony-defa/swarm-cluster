@@ -1,24 +1,3 @@
-# ────────────────────────────────────────────────────────────────────────────────
-#  Docker stack file for ESPoCRM – based on the official ESPoCRM + MariaDB example
-#  (see https://docs.espocrm.com/administration/docker/installation/#install-espocrm-with-docker-compose)
-#
-#  Deploy with:
-#      docker stack deploy -c docker-stack.yml espocrm
-#
-#  Variables that need to be set in a .env file (or overridden on the CLI)
-#
-#  * ESPCRM_TAG          – tag of the espocrm image (default: latest)
-#  * MARIADB_TAG         – tag of the mariadb image (default: 10.11)
-#  * DOMAIN              – domain used for Traefik routing (e.g. crm.example.com)
-#  * DB_NAME, DB_USER, DB_PASSWORD – MySQL/MariaDB credentials
-#  * ENTRYPOINT          – Traefik entrypoint (default: websecure)
-#  * HOST_ESPOCRM_DATA   – host path to bind ESPoCRM files
-#  * HOST_ESPOCRM_DB     – host path to bind MariaDB data
-#  * HOST_ESPOCRM_BACKUP – host path to bind backup directory
-#  * BACKUP_FREQUENCY    – interval for backups (seconds, default: 86400)
-#  * RETENTION_DAYS      – how many days to keep backup archives (default: 7)
-# ────────────────────────────────────────────────────────────────────────────────
-
 x-default-opts: &default-opts
   env_file:
     .env
@@ -34,13 +13,13 @@ services:
     <<: *default-opts
     image: espocrm/espocrm:${ESPCRM_TAG}
     networks:
-      - proxy_network          # Traefik
-      - espocrm_network        # Internal communication
+      - proxy_network
+      - espocrm_network
     volumes:
-      - espocrm_data:/var/www/html
+      - data:/var/www/html
     environment:
       ESPOCRM_DATABASE_PLATFORM: "Mysql"
-      ESPOCRM_DATABASE_HOST:     "db"                     # points to the MariaDB service
+      ESPOCRM_DATABASE_HOST:     "db"
       ESPOCRM_DATABASE_USER:     "${DB_USER}"
       ESPOCRM_DATABASE_PASSWORD: "${DB_PASSWORD}"
       ESPOCRM_SITE_URL:          "https://${DOMAIN}"
@@ -62,9 +41,8 @@ services:
     networks:
       - espocrm_network
     volumes:
-      - espocrm_db:/var/lib/mysql
+      - db:/var/lib/mysql
     environment:
-      MARIADB_ROOT_PASSWORD:  root_password          # can be overridden in .env
       MARIADB_DATABASE:       ${DB_NAME}
       MARIADB_USER:           ${DB_USER}
       MARIADB_PASSWORD:       ${DB_PASSWORD}
@@ -73,8 +51,6 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
-      placement:
-        constraints: [node.role == manager]          # optional – keep DB on a manager
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 20s
@@ -91,7 +67,7 @@ services:
       - |
         echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed in $$BACKUP_FREQUENCY.";
         while true; do
-          backup_dir=/backup/espocrm_$$({{date +'%Y%m%d_%H%M%S'}});
+          backup_dir=/backup/espocrm_$$(date +'%Y%m%d_%H%M%S');
           mkdir -p "$$backup_dir";
           echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of EspoCRM data including SQL dump of $$DB_NAME database...";
           /usr/bin/mariadb-dump -u $$DB_USER --password=$$DB_PASSWORD --host=db --databases $$DB_NAME --no-tablespaces > $$backup_dir/db.sql;
@@ -101,8 +77,8 @@ services:
           sleep $$BACKUP_FREQUENCY;
         done
     volumes:
-      - espocrm_backup:/backup
-      - espocrm_data:/var/www/html
+      - backup:/backup
+      - data:/var/www/html
     networks:
       - espocrm_network
     deploy:
@@ -110,16 +86,16 @@ services:
         condition: on-failure
         delay: 600s
 
-# ---------- Networks ----------
+
 networks:
   proxy_network:
     external: true
 
   espocrm_network:
     driver: overlay
-# ---------- Volumes ----------
+
 volumes:
-  espocrm_data:
+  data:
     driver: local
     driver_opts:
       device: ${HOST_ESPOCRM_DATA}
@@ -129,7 +105,7 @@ volumes:
       # type: nfs
       # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
 
-  espocrm_db:
+  db:
     driver: local
     driver_opts:
       device: ${HOST_ESPOCRM_DB}
@@ -139,7 +115,7 @@ volumes:
       # type: nfs
       # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
 
-  espocrm_backup:
+  backup:
     driver: local
     driver_opts:
       device: ${HOST_ESPOCRM_BACKUP}
