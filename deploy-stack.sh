@@ -147,7 +147,7 @@ deploy_stack() {
     docker stack deploy --with-registry-auth -c "$compose_file" "$STACK_NAME"
   fi
 
-  if [[ -f "$compose_file" ]]; then
+  if [ "$IS_MUSTACHE" == true ]; then
     rm "$compose_file"
   fi
 }
