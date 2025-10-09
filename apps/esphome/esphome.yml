@@ -1,0 +1,52 @@
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+
+services:
+  esphome:
+    <<: *default-opts
+    image: ghcr.io/esphome/esphome:${ESPHOME_TAG:-latest}
+    volumes:
+      - esphome_config:/config
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 6052:6052
+    networks:
+      - macvlan_swarm # Connect to the same network as Home Assistant
+      - proxy_network
+    # Docker Swarm compatible approach instead of privileged: true
+    cap_add:
+      - SYS_PTRACE
+      - NET_ADMIN
+      - NET_RAW
+    security_opt:
+      - no-new-privileges:false
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.esphome.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.esphome.rule: Host(`${DOMAIN:-esphome.host.local}`)
+        traefik.http.routers.esphome.service: esphome
+        traefik.http.services.esphome.loadbalancer.server.port: 6052
+
+networks:
+  macvlan_swarm:
+    external: true
+
+  proxy_network:
+    external: true
+
+volumes:
+  esphome_config:
+    driver: local
+    driver_opts:
+      device: ${HOST_ESPHOME_CONFIG} # Bind mount to host path from .env
+      type: none
+      o: bind
