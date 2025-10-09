@@ -38,14 +38,14 @@ $ chmod +x ./create_prometheus_data.sh
 $ sudo ./create_prometheus_data.sh
 ```
 
-Basic config files will be placed in the `HOST_PROMETHEUS_DATA` directory and in the `./config/prometheus` directory. The later can be edited to fit your needs. Re-Execute the script above to copy the config files to the `HOST_PROMETHEUS_DATA` directory and apply your changes.
+The script creates the necessary configuration files from the example files in `./config/prometheus` and places them in the directory configured via the `HOST_PROMETHEUS_DATA` variable in the `.env` file. To modify the configuration files, it is recommended to edit the files in `./config/prometheus` and re-execute the script. The script will overwrite the existing files in the `HOST_PROMETHEUS_DATA` directory and apply your changes.
 
 #### Alertmanager configuration
 ```sh
 $ chmod +x ./create_alertmanager_data.sh
 $ sudo ./create_alertmanager_data.sh
 ```
-This script works the same as the one for prometheus. See [Prometheus configuration](#prometheus-configuration)
+This script works the same as the one for prometheus, but it copies the configuration file from `./config/alertmanager` and puts it into the `HOST_ALERTMANAGER_DATA` folder. See [Prometheus configuration](#prometheus-configuration)
 
 #### Traefik configuration
 > It is recommended to copy the original `traefik.yml` to a named `<name>.traefik.yml` version.
@@ -60,6 +60,8 @@ For traefik to work properly some configuration steps are necessary. Run the fol
 $ chmod +x ./create_traefik_data.sh
 $ sudo ./create_traefik_data.sh
 ```
+
+> Same general idea of [Prometheus configuration](#prometheus-configuration). But this script will not overwrite existing `acme.json` and `users.txt` files in the `HOST_TRAEFIK_DATA` directory.
 
 To create a basic auth account use the following commands (optional)
 
