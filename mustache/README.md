@@ -8,7 +8,7 @@ Each stack folder should contain a `.mustache` file that contains the structure 
 
 There are several ways to install mustache. Find the way that suits you best by visiting the [mustache github page](https://mustache.github.io/).
 
-## Deploy a stack
+## Prepare view and environment files
 
 The following paragraphs describe the general steps to take when creating a stack from a mustache template. In some cases further prerequisites are described in the `README.md`-file of the stack directory.
 
@@ -35,10 +35,36 @@ $ cp example.view.json .my-project.view.json
 
 Now edit the `.my-project.view.json`-file and configure it according to the cluster.
 
+## Deploy a stack
 
-### 3. Configured `HOST` paths
+You can deploy a mustache template stack either by using the provided helper script (recommended) or by following the manual process.
 
-The `.my-project.view.json`-file may contain paths that need to be created before the execution of the stack. These are properties that start with `host_`. To create these folders, run the following commands:
+### 🚀 Deploy using the helper script (recommended)
+
+**Run the deployment script**
+
+    ```bash
+    deploy-stack <stack-file.mustache> [stack-name]
+    ```
+
+    - `<stack-file.mustache>`: your mustache template file (e.g., `wordpress.mustache`)
+    - `[stack-name]`: custom stack name; if omitted, the script uses the view filename (without extension)
+
+The script will:
+
+- Detect available view files and prompt for selection (or use default `.view.json`)
+- Auto-select corresponding `.env` file based on view file name
+- Create any `host_…` folders from view file that don't yet exist and set their group to `docker`
+- Prompt you to create secrets used by the stack, if `yd` is installed
+- Generate YAML from mustache template and deploy with `docker stack deploy`
+
+---
+
+### Manual deployment process (alternative)
+
+**Create host directories**
+
+The `.my-project.view.json` file may contain paths that need to be created (properties starting with `host_`):
 
 ```sh
 $ cd folder-of-interest/
@@ -46,30 +72,34 @@ $ cat .my-project.view.json | jq -r '. | to_entries[] | select(.key | startswith
 $ cat .my-project.view.json | jq -r '. | to_entries[] | select(.key | startswith("host_")) | .value' | xargs sudo chown -R :docker
 ```
 
-> Use the `sudo` command (after the last pipe) for directories that do not reside in your home directory. Omit `sudo` otherwise.
-> For NFS configuration: Use `nobody:nogroup` as owner for the created directories with the `chown` command.
+**Deploy the stack directly**
 
-### 4. Other steps
-To setup the required data, networks and secrets, follow the instructions in the root `README.md`-file and the `README.md`-files of the stack folder.
-
-### 5. Create the stack file from the mustache template
-If you have decided to use the mustache template, you need to create the stack file first. This can be done by running the following command:
+Having done all the previous steps correctly, you can now deploy a mustache stack by running the following command if an `.env`-file is associated with the stack:
 
 ```sh
-$ cd folder-of-interest/
-$ mustache .my-project.view.json app.mustache > .my-project.app.yml
-```
-
-or deploy the stack directly without creating the intermediate stack file:
-
-```sh
-$ cd folder-of-interest/
-$ mustache .my-project.view.json app.mustache | env -i $(cat .my-project.env | grep "^[A-Z]" | xargs) docker stack deploy -c - stack-name
+cd folder-of-interest/
+env -i $(cat .my-project.env | grep "^[A-Z]" | xargs) mustache .my-project.view.json app.mustache | docker stack deploy -c - stack-name
 ```
 
 or omit the `env` part of the command, if there is no `.env`-file associated with the stack:
 
 ```sh
-$ cd folder-of-interest/
-$ mustache .my-project.view.json app.mustache | docker stack deploy -c - stack-name
+cd folder-of-interest/
+mustache .my-project.view.json app.mustache | docker stack deploy -c - stack-name
+```
+
+**Deploy the stack directly**
+
+Having done all the previous steps correctly, you can now deploy a mustache stack by running the following command if an `.env`-file is associated with the stack:
+
+```sh
+cd folder-of-interest/
+env -i $(cat .my-project.env | grep "^[A-Z]" | xargs) mustache .my-project.view.json app.mustache | docker stack deploy -c - stack-name
+```
+
+or omit the `env` part of the command, if there is no `.env`-file associated with the stack:
+
+```sh
+cd folder-of-interest/
+mustache .my-project.view.json app.mustache | docker stack deploy -c - stack-name
 ```

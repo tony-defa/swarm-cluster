@@ -47,6 +47,8 @@ To create a docker secret simply use the following command.
 printf "someSecret" | docker secret create <name_of_secret> -
 ```
 
+> When using the `deploy-stack` script, you will be prompted to create secrets used by the stack, if `yd` is installed.
+
 ### 4. Create networks
 It may be necessary to create one or more docker networks to run a stack. If this is the case, you'll find the instruction in the `README.md` of the stack folder.
 
