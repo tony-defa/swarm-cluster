@@ -345,6 +345,12 @@ handle_mustache_template() {
 main() {
   validate_arguments "$@"
 
+  if [[ "$STACK_FILE" == *.mustache ]]; then
+    IS_MUSTACHE=true
+  else
+    IS_MUSTACHE=false
+  fi
+
   STACK_DIR=$(dirname "$STACK_FILE")
   derive_stack_name
 
@@ -359,12 +365,6 @@ main() {
   create_secrets
   deploy_stack
 }
-
-if [[ "$STACK_FILE" == *.mustache ]]; then
-  IS_MUSTACHE=true
-else
-  IS_MUSTACHE=false
-fi
 
 # Run main function with all arguments
 main "$@"
