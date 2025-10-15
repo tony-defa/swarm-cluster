@@ -10,11 +10,11 @@
     "mariadb_tag": "11.4",
 
     "__comment3": "Proxy configuration",
-    "service_name": "test",
+    "service_name": "crm",
     "entrypoint": "",
     "routing_rule": "Host(`crm.host.local`)",
 
     "__comment4": "Other configuration",
-    "env_file": "example.env",
+    "env_file": ".env",
     "gelf_address": null
 }
