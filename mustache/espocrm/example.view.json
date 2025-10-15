@@ -1,0 +1,20 @@
+
+{
+    "__comment1": "Host volume paths",
+    "host_espocrm_db": "/cluster/crm_data/db",
+    "host_espocrm_data": "/cluster/crm_data/data",
+    "host_espocrm_backup": "/cluster/crm_data/backup",
+
+    "__comment2": "Image tags",
+    "espocrm_tag": "8.4.2",
+    "mariadb_tag": "11.4",
+
+    "__comment3": "Proxy configuration",
+    "service_name": "test",
+    "entrypoint": "",
+    "routing_rule": "Host(`crm.host.local`)",
+
+    "__comment4": "Other configuration",
+    "env_file": "example.env",
+    "gelf_address": null
+}

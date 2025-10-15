@@ -1,0 +1,145 @@
+x-default-opts: &default-opts
+  {{#env_file}}
+  env_file:
+    {{env_file}}
+  {{/env_file}}
+  logging:
+  {{^gelf_address}}
+    options:
+      max-size: "1m"
+  {{/gelf_address}}
+  {{#gelf_address}}
+    driver: "gelf"
+    options:
+      gelf-address: "{{{gelf_address}}}"
+  {{/gelf_address}}
+
+services:
+  web:
+    <<: *default-opts
+    image: espocrm/espocrm:{{espocrm_tag}}
+    networks:
+      - proxy_network
+      - espocrm_network
+    volumes:
+      - data:/var/www/html
+    environment:
+      ESPOCRM_DATABASE_PLATFORM: "Mysql"
+      ESPOCRM_DATABASE_HOST:     "db"
+      ESPOCRM_DATABASE_USER:     "${DB_USER}"
+      ESPOCRM_DATABASE_NAME:     "${DB_NAME}"
+      ESPOCRM_DATABASE_PASSWORD: "${DB_PASSWORD}"
+      ESPOCRM_SITE_URL:          "https://${DOMAIN}"
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.crm-{{service_name}}.entrypoints: {{#entrypoint}}{{entrypoint}}{{/entrypoint}}{{^entrypoint}}websecure{{/entrypoint}}
+        traefik.http.routers.crm-{{service_name}}.rule: {{#routing_rule}}{{{routing_rule}}}{{/routing_rule}}{{^routing_rule}}Host(`crm.host.local`){{/routing_rule}}
+        traefik.http.routers.crm-{{service_name}}.service: crm-{{service_name}}
+        traefik.http.services.crm-{{service_name}}.loadbalancer.server.port: 80
+
+  db:
+    <<: *default-opts
+    image: mariadb:{{mariadb_tag}}
+    networks:
+      - espocrm_network
+    volumes:
+      - db:/var/lib/mysql
+    environment:
+      MARIADB_DATABASE:       ${DB_NAME}
+      MARIADB_USER:           ${DB_USER}
+      MARIADB_PASSWORD:       ${DB_PASSWORD}
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  daemon:
+    <<: *default-opts
+    image: espocrm/espocrm:{{espocrm_tag}}
+    networks:
+      - espocrm_network
+    volumes:
+      - data:/var/www/html
+    deploy:
+      restart_policy:
+        condition: on-failure
+    entrypoint: docker-daemon.sh
+
+  backup:
+    <<: *default-opts
+    image: mariadb:{{mariadb_tag}}
+    command:
+      - sh
+      - -c
+      - |
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed in $$BACKUP_FREQUENCY.";
+        while true; do
+          backup_dir=/backup/crm-{{service_name}}_$$(date +'%Y%m%d_%H%M%S');
+          mkdir -p "$$backup_dir";
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of EspoCRM data including SQL dump of $$DB_NAME database...";
+          /usr/bin/mariadb-dump -u $$DB_USER --password=$$DB_PASSWORD --host=db --databases $$DB_NAME --no-tablespaces > $$backup_dir/db.sql;
+          tar -C /var/www/html -czf $$backup_dir/files.tar.gz .;
+          find /backup/crm-{{service_name}}_* -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in $$BACKUP_FREQUENCY.";
+          sleep $$BACKUP_FREQUENCY;
+        done
+    volumes:
+      - backup:/backup
+      - data:/var/www/html
+    networks:
+      - espocrm_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
+
+networks:
+  proxy_network:
+    external: true
+
+  espocrm_network:
+    driver: overlay
+
+volumes:
+  data:
+    driver: local
+    driver_opts:
+      device: {{{host_espocrm_data}}}
+      type: none
+      o: bind
+      # device: ":${HOST_ESPOCRM_DATA?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  db:
+    driver: local
+    driver_opts:
+      device: {{{host_espocrm_db}}}
+      type: none
+      o: bind
+      # device: ":${HOST_ESPOCRM_DB?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  backup:
+    driver: local
+    driver_opts:
+      device: {{{host_espocrm_backup}}}
+      type: none
+      o: bind
+      # device: ":${HOST_ESPOCRM_BACKUP?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
