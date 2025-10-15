@@ -21,6 +21,7 @@ services:
       ESPOCRM_DATABASE_PLATFORM: "Mysql"
       ESPOCRM_DATABASE_HOST:     "db"
       ESPOCRM_DATABASE_USER:     "${DB_USER}"
+      ESPOCRM_DATABASE_NAME:     "${DB_NAME}"
       ESPOCRM_DATABASE_PASSWORD: "${DB_PASSWORD}"
       ESPOCRM_SITE_URL:          "https://${DOMAIN}"
     deploy:
@@ -57,6 +58,18 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  daemon:
+    <<: *default-opts
+    image: espocrm/espocrm:${ESPCRM_TAG}
+    networks:
+      - espocrm_network
+    volumes:
+      - data:/var/www/html
+    deploy:
+      restart_policy:
+        condition: on-failure
+    entrypoint: docker-daemon.sh
 
   backup:
     <<: *default-opts
