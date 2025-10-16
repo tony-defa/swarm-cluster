@@ -138,7 +138,7 @@ deploy_stack() {
     echo "Deploying stack with env file: $env_file"
 
     # Deploy using compose config (with .env file)
-    docker compose -f "$compose_file" config --no-normalize | \
+    docker compose -f "$compose_file" --env-file "$env_file" config --no-normalize | \
       grep -v '^name' | \
       sed '/published:/ s/"//g' | \
       docker stack deploy --with-registry-auth -c - "$STACK_NAME"
