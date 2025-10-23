@@ -110,7 +110,7 @@ services:
       - bash
       - -c
       - | 
-        apt update && apt --no-install-recommends install netcat -y && rm -rf /var/lib/apt/lists/*;
+        apt update && apt --no-install-recommends install netcat-openbsd -y && rm -rf /var/lib/apt/lists/*;
 
         BACKUP_DIR="/master/data/backup/";
         NEWEST_DUMP=$$(ls -t $$BACKUP_DIR | head -1);
