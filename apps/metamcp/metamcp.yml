@@ -1,0 +1,73 @@
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://172.17.0.1:12201"
+
+services:
+  app:
+    <<: *default-opts
+    image: ghcr.io/metatool-ai/metamcp:${METAMCP_TAG}
+    networks:
+      - metamcp_network
+      - proxy_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.metamcp.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.metamcp.rule: Host(`${DOMAIN:-metamcp.host.local}`)
+        traefik.http.routers.metamcp.service: metamcp
+        # traefik.http.routers.metamcp.middlewares: metamcp-sse
+        traefik.http.services.metamcp.loadbalancer.server.port: 12008
+
+        # traefik.http.services.metamcp.loadbalancer.server.scheme: http
+        # traefik.http.routers.metamcp.tls.certResolver: ${TLS_RESOLVER:-letsencrypt}
+        
+        # # SSE-specific middleware configuration
+        # traefik.http.middlewares.metamcp-sse.buffering=false
+        # traefik.http.middlewares.metamcp-sse.headers.customRequestHeaders.Cache-Control=no-cache
+        # traefik.http.middlewares.metamcp-sse.headers.customRequestHeaders.X-Accel-Buffering=no
+        # traefik.http.middlewares.metamcp-sse.headers.customResponseHeaders.Cache-Control=no-cache
+        # traefik.http.middlewares.metamcp-sse.headers.customResponseHeaders.X-Accel-Buffering=no
+
+  postgres:
+    <<: *default-opts
+    image: postgres:${POSTGRES_TAG}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - metamcp_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+networks:
+  proxy_network:
+    external: true
+  
+  metamcp_network:
+    driver: overlay
+
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_POSTGRES_DATA}
+      type: none
+      o: bind
