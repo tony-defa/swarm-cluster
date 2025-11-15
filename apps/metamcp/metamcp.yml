@@ -15,6 +15,9 @@ services:
     networks:
       - metamcp_network
       - proxy_network
+    environment:
+      NEXT_PUBLIC_APP_URL: ${APP_URL}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
     deploy:
       mode: replicated
       replicas: 1
