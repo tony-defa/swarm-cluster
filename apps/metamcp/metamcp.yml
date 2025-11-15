@@ -28,18 +28,7 @@ services:
         traefik.http.routers.metamcp.entrypoints: ${ENTRYPOINT:-websecure}
         traefik.http.routers.metamcp.rule: Host(`${DOMAIN:-metamcp.host.local}`)
         traefik.http.routers.metamcp.service: metamcp
-        # traefik.http.routers.metamcp.middlewares: metamcp-sse
         traefik.http.services.metamcp.loadbalancer.server.port: 12008
-
-        # traefik.http.services.metamcp.loadbalancer.server.scheme: http
-        # traefik.http.routers.metamcp.tls.certResolver: ${TLS_RESOLVER:-letsencrypt}
-        
-        # # SSE-specific middleware configuration
-        # traefik.http.middlewares.metamcp-sse.buffering=false
-        # traefik.http.middlewares.metamcp-sse.headers.customRequestHeaders.Cache-Control=no-cache
-        # traefik.http.middlewares.metamcp-sse.headers.customRequestHeaders.X-Accel-Buffering=no
-        # traefik.http.middlewares.metamcp-sse.headers.customResponseHeaders.Cache-Control=no-cache
-        # traefik.http.middlewares.metamcp-sse.headers.customResponseHeaders.X-Accel-Buffering=no
 
   postgres:
     <<: *default-opts

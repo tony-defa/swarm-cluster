@@ -24,7 +24,7 @@ No network needs to be created.
 
 ## Other notes
 ### SSE Support
-MetaMCP uses Server-Sent Events (SSE) for real-time communication. The stack is configured with Traefik to properly handle SSE connections with appropriate timeouts and buffering settings.
+MetaMCP can use Server-Sent Events (SSE) for real-time communication. The stack is configured with Traefik but it is not configured to properly handle SSE connections with appropriate timeouts and buffering settings. This could be added in a future update.
 
 ### Authentication
 By default, MetaMCP uses basic authentication. For production deployments, configure the `BETTER_AUTH_SECRET` environment variable with a strong secret key.
