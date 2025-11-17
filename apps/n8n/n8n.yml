@@ -13,7 +13,7 @@ services:
       - n8n_data:/home/node/.n8n
     environment:
       - DB_TYPE=postgres
-      - DB_POSTGRES_HOST=${POSTGRES_HOST}
+      - DB_POSTGRES_HOST=db
       - DB_POSTGRES_DATABASE=${POSTGRES_DB}
       - DB_POSTGRES_USER_FILE=/run/secrets/n8n_db_user
       - DB_POSTGRES_PASSWORD_FILE=/run/secrets/n8n_db_password
