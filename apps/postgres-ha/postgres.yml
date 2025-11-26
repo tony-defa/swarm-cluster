@@ -1,0 +1,221 @@
+x-default-opts: &default-opts
+  env_file:
+    - .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://172.17.0.1:12201"
+ 
+services:
+  db:
+    <<: *default-opts
+    image: postgres:${POSTGRES_TAG:-16}
+    volumes:
+      - postgres_ha_data:/var/lib/postgresql/data
+      - ./entrypoint.d:/docker-entrypoint-initdb.d:ro
+    secrets:
+      - postgres_ha_database
+      - postgres_ha_user
+      - postgres_ha_password
+      - postgres_ha_replication_user
+      - postgres_ha_replication_password
+      - postgres_ha_root_password
+    environment:
+      - POSTGRES_DB_FILE=/run/secrets/postgres_ha_database
+      - POSTGRES_USER_FILE=/run/secrets/postgres_ha_user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_ha_password
+      - POSTGRES_REPLICATION_USER_FILE=/run/secrets/postgres_ha_replication_user
+      - POSTGRES_REPLICATION_PASSWORD_FILE=/run/secrets/postgres_ha_replication_password
+      - POSTGRES_ROOT_PASSWORD_FILE=/run/secrets/postgres_ha_root_password
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 --auth-local=peer
+      - POSTGRES_CONFIG_FILE=/etc/postgresql/postgresql.conf
+    command: |
+      bash -c '
+        # Create custom postgresql.conf with replication settings
+        cat > /etc/postgresql/postgresql.conf << EOF
+        # Basic settings
+        listen_addresses = "*"
+        port = 5432
+        max_connections = 100
+        shared_buffers = 128MB
+        effective_cache_size = 1GB
+        maintenance_work_mem = 64MB
+        checkpoint_completion_target = 0.9
+        wal_buffers = 16MB
+        checkpoint_timeout = 5min
+        checkpoint_warning = 30s
+        
+        # Replication settings
+        wal_level = replica
+        max_wal_senders = 3
+        max_replication_slots = 3
+        hot_standby = on
+        hot_standby_feedback = on
+        wal_keep_size = 64MB
+        max_standby_streaming_delay = 30s
+        max_standby_archive_delay = 30s
+        
+        # Include default config
+        include = /usr/share/postgresql/postgresql.conf.sample
+        EOF
+        
+        # Start PostgreSQL with custom config
+        exec postgres -c config_file=/etc/postgresql/postgresql.conf
+      '
+    networks:
+      - postgres_ha_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  replica:
+    <<: *default-opts
+    image: postgres:${POSTGRES_TAG:-16}
+    secrets:
+      - postgres_ha_replication_user
+      - postgres_ha_replication_password
+      - postgres_ha_root_password
+    environment:
+      - POSTGRES_REPLICATION_USER_FILE=/run/secrets/postgres_ha_replication_user
+      - POSTGRES_REPLICATION_PASSWORD_FILE=/run/secrets/postgres_ha_replication_password
+      - POSTGRES_ROOT_PASSWORD_FILE=/run/secrets/postgres_ha_root_password
+      - PG_PRIMARY_HOST=db
+      - PG_PRIMARY_PORT=5432
+      - PG_DATABASE=postgres
+      - PG_USER_FILE=/run/secrets/postgres_ha_replication_user
+      - PG_PASSWORD_FILE=/run/secrets/postgres_ha_replication_password
+    command: |
+      bash -c '
+        # Wait for master to be ready
+        until pg_isready -h db -p 5432; do
+          echo "Waiting for master database to be available..."
+          sleep 2
+        done
+        
+        # Check if data directory is empty (first time setup)
+        if [ -z "$(ls -A /var/lib/postgresql/data)" ]; then
+          echo "Setting up replica from master via base_backup..."
+          
+          # Create replication user if not exists
+          PGPASSWORD=$(cat /run/secrets/postgres_ha_root_password) psql -U postgres -h db -c "
+            DO \$\$ 
+            BEGIN 
+              IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '\''$(cat /run/secrets/postgres_ha_replication_user)\'') THEN 
+                CREATE ROLE $(cat /run/secrets/postgres_ha_replication_user) WITH REPLICATION LOGIN PASSWORD '\''$(cat /run/secrets/postgres_ha_replication_password)\'';
+              END IF; 
+            END 
+            \$\$;"
+          
+          # Perform base backup
+          PGPASSWORD=$(cat /run/secrets/postgres_ha_replication_password) pg_basebackup \
+            -h db \
+            -D /var/lib/postgresql/data \
+            -U $(cat /run/secrets/postgres_ha_replication_user) \
+            -v \
+            -P \
+            -W
+          
+          # Create recovery configuration
+          cat > /var/lib/postgresql/data/standby.signal << EOF
+          # Standby mode configuration
+          EOF
+          
+          cat > /var/lib/postgresql/data/postgresql.auto.conf << EOF
+          primary_conninfo = 'host=db port=5432 user=$(cat /run/secrets/postgres_ha_replication_user) password=$(cat /run/secrets/postgres_ha_replication_password) application_name=replica'
+          primary_slot_name = 'replica_slot'
+          hot_standby = on
+          hot_standby_feedback = on
+          max_standby_streaming_delay = 30s
+          max_standby_archive_delay = 30s
+          EOF
+        fi
+        
+        # Start PostgreSQL in standby mode
+        exec postgres
+      '
+    networks:
+      - postgres_ha_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 0
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  backup:
+    <<: *default-opts
+    image: postgres:${POSTGRES_TAG:-16}
+    volumes:
+      - postgres_ha_data:/master/data:ro
+    secrets:
+      - postgres_ha_database
+      - postgres_ha_user
+      - postgres_ha_password
+      - postgres_ha_root_password
+    command: |
+      bash -c '
+        echo "[$(date +'"'"'%Y-%m-%d %H:%M:%S'"'"')] Backup service started. First dump will be executed in $BACKUP_FREQUENCY."
+        while true; do
+          sleep $BACKUP_FREQUENCY
+          DB_NAME=$(cat /run/secrets/postgres_ha_database)
+          DB_USER=$(cat /run/secrets/postgres_ha_user)
+          DB_PASSWORD=$(cat /run/secrets/postgres_ha_root_password)
+          backup_dir=/master/data/backup
+          mkdir -p $backup_dir
+          echo "[$(date +'"'"'%Y-%m-%d %H:%M:%S'"'"')] Creating SQL dump of $DB_NAME database..."
+          
+          PGPASSWORD=$DB_PASSWORD pg_dump \
+            -h db \
+            -U $DB_USER \
+            -d $DB_NAME \
+            --verbose \
+            --clean \
+            --no-owner \
+            --create \
+            > $backup_dir/db_$(date +'"'"'%Y%m%d_%H%M%S'"'"').sql
+          
+          # Clean up old backups
+          find $backup_dir -iname "db_*.sql" -mtime +$RETENTION_DAYS -exec rm -rf {} \;
+          echo "[$(date +'"'"'%Y-%m-%d %H:%M:%S'"'"')] Backup completed. Next dump in $BACKUP_FREQUENCY."
+        done
+      '
+    networks:
+      - postgres_ha_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
+secrets:
+  postgres_ha_database:
+    external: true
+  postgres_ha_user:
+    external: true
+  postgres_ha_password:
+    external: true
+  postgres_ha_root_password:
+    external: true 
+  postgres_ha_replication_user:
+    external: true 
+  postgres_ha_replication_password:
+    external: true 
+      
+networks:
+  postgres_ha_network:
+    external: true
+
+volumes:
+  postgres_ha_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_POSTGRES_DATA}
+      type: none
+      o: bind
+  
