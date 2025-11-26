@@ -40,6 +40,8 @@ The replica service uses PostgreSQL's streaming replication. When the replica st
 
 This approach prevents the slow catch-up that would occur if the replica tried to replay all WAL entries since the master's creation. The base backup ensures the replica starts with current data and only needs to apply recent changes.
 
+To check the replication status from within the master instance, you can run the following command: `docker exec -it <postgres-primary-name> psql -U postgres -c "SELECT * FROM pg_stat_replication;"`
+
 ### Backup 
 The backup service uses `pg_dump` to create logical backups of the database. The dump interval is defined in the environment variable `BACKUP_FREQUENCY`. The files are kept for `RETENTION_DAYS` while older files will be deleted automatically.
 
