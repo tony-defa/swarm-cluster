@@ -15,6 +15,9 @@ services:
     volumes:
       - postgres_ha_data:/var/lib/postgresql/data
       - ./entrypoint.d:/docker-entrypoint-initdb.d:ro
+    configs:
+      - source: postgresql_config
+        target: /etc/postgresql/postgresql.conf
     secrets:
       - postgres_ha_database
       - postgres_ha_user
@@ -30,41 +33,7 @@ services:
       - POSTGRES_REPLICATION_PASSWORD_FILE=/run/secrets/postgres_ha_replication_password
       - POSTGRES_ROOT_PASSWORD_FILE=/run/secrets/postgres_ha_root_password
       - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 --auth-local=peer
-      - POSTGRES_CONFIG_FILE=/etc/postgresql/postgresql.conf
-    command: 
-      - bash
-      - -c
-      - |
-        # Create custom postgresql.conf with replication settings
-        cat > /etc/postgresql/postgresql.conf << EOF
-        # Basic settings
-        listen_addresses = "*"
-        port = 5432
-        max_connections = 100
-        shared_buffers = 128MB
-        effective_cache_size = 1GB
-        maintenance_work_mem = 64MB
-        checkpoint_completion_target = 0.9
-        wal_buffers = 16MB
-        checkpoint_timeout = 5min
-        checkpoint_warning = 30s
-        
-        # Replication settings
-        wal_level = replica
-        max_wal_senders = 3
-        max_replication_slots = 3
-        hot_standby = on
-        hot_standby_feedback = on
-        wal_keep_size = 64MB
-        max_standby_streaming_delay = 30s
-        max_standby_archive_delay = 30s
-        
-        # Include default config
-        include = /usr/share/postgresql/postgresql.conf.sample
-        EOF
-        
-        # Start PostgreSQL with custom config
-        exec postgres -c config_file=/etc/postgresql/postgresql.conf
+    command: postgres -c config_file='/etc/postgresql/postgresql.conf'
     networks:
       - postgres_ha_network
     deploy:
@@ -196,6 +165,11 @@ services:
         condition: on-failure
         delay: 600s
 
+configs:
+  postgresql_config:
+    file: ./config/postgresql.conf
+    name: db-config-1
+
 secrets:
   postgres_ha_database:
     external: true
@@ -221,4 +195,3 @@ volumes:
       device: ${HOST_POSTGRES_DATA}
       type: none
       o: bind
-  
