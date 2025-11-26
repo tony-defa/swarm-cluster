@@ -31,8 +31,10 @@ services:
       - POSTGRES_ROOT_PASSWORD_FILE=/run/secrets/postgres_ha_root_password
       - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 --auth-local=peer
       - POSTGRES_CONFIG_FILE=/etc/postgresql/postgresql.conf
-    command: |
-      bash -c '
+    command: 
+      - bash
+      - -c
+      - |
         # Create custom postgresql.conf with replication settings
         cat > /etc/postgresql/postgresql.conf << EOF
         # Basic settings
@@ -63,7 +65,6 @@ services:
         
         # Start PostgreSQL with custom config
         exec postgres -c config_file=/etc/postgresql/postgresql.conf
-      '
     networks:
       - postgres_ha_network
     deploy:
@@ -90,8 +91,10 @@ services:
       - PG_DATABASE=postgres
       - PG_USER_FILE=/run/secrets/postgres_ha_replication_user
       - PG_PASSWORD_FILE=/run/secrets/postgres_ha_replication_password
-    command: |
-      bash -c '
+    command:
+      - bash
+      - -c
+      - |
         # Wait for master to be ready
         until pg_isready -h db -p 5432; do
           echo "Waiting for master database to be available..."
@@ -138,7 +141,6 @@ services:
         
         # Start PostgreSQL in standby mode
         exec postgres
-      '
     networks:
       - postgres_ha_network
     deploy:
@@ -159,8 +161,10 @@ services:
       - postgres_ha_user
       - postgres_ha_password
       - postgres_ha_root_password
-    command: |
-      bash -c '
+    command:
+      - bash
+      - -c
+      - |
         echo "[$(date +'"'"'%Y-%m-%d %H:%M:%S'"'"')] Backup service started. First dump will be executed in $BACKUP_FREQUENCY."
         while true; do
           sleep $BACKUP_FREQUENCY
@@ -185,7 +189,6 @@ services:
           find $backup_dir -iname "db_*.sql" -mtime +$RETENTION_DAYS -exec rm -rf {} \;
           echo "[$(date +'"'"'%Y-%m-%d %H:%M:%S'"'"')] Backup completed. Next dump in $BACKUP_FREQUENCY."
         done
-      '
     networks:
       - postgres_ha_network
     deploy:
