@@ -11,7 +11,7 @@ x-default-opts: &default-opts
 services:
   db:
     <<: *default-opts
-    image: postgres:${POSTGRES_TAG:-16}
+    image: postgres:${POSTGRES_TAG:-18}
     volumes:
       - postgres_ha_data:/var/lib/postgresql/data
       - ./entrypoint.d:/docker-entrypoint-initdb.d:ro
@@ -76,7 +76,7 @@ services:
 
   replica:
     <<: *default-opts
-    image: postgres:${POSTGRES_TAG:-16}
+    image: postgres:${POSTGRES_TAG:-18}
     secrets:
       - postgres_ha_replication_user
       - postgres_ha_replication_password
@@ -151,7 +151,7 @@ services:
 
   backup:
     <<: *default-opts
-    image: postgres:${POSTGRES_TAG:-16}
+    image: postgres:${POSTGRES_TAG:-18}
     volumes:
       - postgres_ha_data:/master/data:ro
     secrets:
