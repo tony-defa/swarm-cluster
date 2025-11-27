@@ -21,13 +21,12 @@ services:
       - source: pg_hba_config
         target: /etc/postgresql/pg_hba.conf
     secrets:
-      - postgres_ha_database
       - postgres_ha_password
       - postgres_ha_replication_user
       - postgres_ha_replication_password
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_DB=/run/secrets/postgres_ha_database
+      - POSTGRES_DB=${DATABASE_NAME}
       - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_ha_password
       - POSTGRES_REPLICATION_USER_FILE=/run/secrets/postgres_ha_replication_user
       - POSTGRES_REPLICATION_PASSWORD_FILE=/run/secrets/postgres_ha_replication_password
@@ -84,7 +83,6 @@ services:
       - postgres_backup_data:/master/backup
       - postgres_ha_data:/master/data:ro
     secrets:
-      - postgres_ha_database
       - postgres_ha_password
     command:
       - bash
@@ -93,7 +91,7 @@ services:
         echo "[$(date +'"'"'%Y-%m-%d %H:%M:%S'"'"')] Backup service started. First dump will be executed in $BACKUP_FREQUENCY."
         while true; do
           sleep $BACKUP_FREQUENCY
-          DB_NAME=$(cat /run/secrets/postgres_ha_database)
+          DB_NAME=$DATABASE_NAME
           DB_USER=postgres
           DB_PASSWORD=$(cat /run/secrets/postgres_ha_password)
           backup_dir=/master/backup
@@ -133,8 +131,6 @@ configs:
     name: replica-config-1
 
 secrets:
-  postgres_ha_database:
-    external: true
   postgres_ha_password:
     external: true
   postgres_ha_replication_user:

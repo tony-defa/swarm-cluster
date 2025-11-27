@@ -30,7 +30,6 @@ Edit the newly created config files to fit your needs. The `.postgresql.db.conf`
 ### Create docker secrets
 Create the following docker secrets to configure the database passwords.
 
-- `postgres_ha_database`: The database name
 - `postgres_ha_password`: The password for the postgres user
 - `postgres_ha_replication_user`: The database user used for replication
 - `postgres_ha_replication_password`: The password associated to the `postgres_ha_replication_user` secret
