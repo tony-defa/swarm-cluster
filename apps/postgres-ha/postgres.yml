@@ -21,13 +21,13 @@ services:
       - source: pg_hba_config
         target: /etc/postgresql/pg_hba.conf
     secrets:
-      - postgres_ha_password
+      - postgres_ha_root_password
       - postgres_ha_replication_user
       - postgres_ha_replication_password
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=${DATABASE_NAME}
-      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_ha_password
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_ha_root_password
       - POSTGRES_REPLICATION_USER_FILE=/run/secrets/postgres_ha_replication_user
       - POSTGRES_REPLICATION_PASSWORD_FILE=/run/secrets/postgres_ha_replication_password
       - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 --auth-local=peer
@@ -53,7 +53,7 @@ services:
     secrets:
       - postgres_ha_replication_user
       - postgres_ha_replication_password
-      - postgres_ha_password
+      - postgres_ha_root_password
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_REPLICATION_USER_FILE=/run/secrets/postgres_ha_replication_user
@@ -82,7 +82,7 @@ services:
     volumes:
       - postgres_backup_data:/master/backup
     secrets:
-      - postgres_ha_password
+      - postgres_ha_root_password
     command:
       - bash
       - -c
@@ -95,7 +95,7 @@ services:
         #!/bin/bash
         DB_NAME=$DATABASE_NAME
         DB_USER=postgres
-        DB_PASSWORD=$(cat /run/secrets/postgres_ha_password)
+        DB_PASSWORD=$(cat /run/secrets/postgres_ha_root_password)
         BACKUP_DIR=/master/backup
         mkdir -p $$BACKUP_DIR
         echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating SQL dump of $$DB_NAME database..."
@@ -142,7 +142,7 @@ configs:
     name: replica-config-1
 
 secrets:
-  postgres_ha_password:
+  postgres_ha_root_password:
     external: true
   postgres_ha_replication_user:
     external: true 

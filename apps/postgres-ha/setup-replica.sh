@@ -21,7 +21,7 @@ if [ -z "$(ls -A $PG_PATH)" ]; then
   chmod 700 "$PG_PATH"
   
   # Create replication user if not exists
-  PGPASSWORD=$(cat /run/secrets/postgres_ha_password) \
+  PGPASSWORD=$(cat /run/secrets/postgres_ha_root_password) \
   psql -U postgres -h db -c "
     DO \$\$ 
     BEGIN 
