@@ -40,7 +40,7 @@ Use these secrets to stacks or services that need to connect to this database.
 Create a public overlay network for applications to use to connect to the database.
 
 ```sh
-docker network create -d overlay postgres_ha_network
+docker network create --attachable -d overlay postgres_ha_network
 ```
 
 ## Other notes
