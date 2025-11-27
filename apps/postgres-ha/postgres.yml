@@ -1,0 +1,168 @@
+x-default-opts: &default-opts
+  env_file:
+    - .env
+  logging:
+    options:
+      max-size: "1m"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://172.17.0.1:12201"
+ 
+services:
+  db:
+    <<: *default-opts
+    image: postgres:${POSTGRES_TAG:-18}
+    volumes:
+      - postgres_ha_data:/var/lib/postgresql
+      - ./entrypoint.d:/docker-entrypoint-initdb.d:ro
+    configs:
+      - source: postgresql_config
+        target: /etc/postgresql/postgresql.conf
+      - source: pg_hba_config
+        target: /etc/postgresql/pg_hba.conf
+    secrets:
+      - postgres_ha_password
+      - postgres_ha_replication_user
+      - postgres_ha_replication_password
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_ha_password
+      - POSTGRES_REPLICATION_USER_FILE=/run/secrets/postgres_ha_replication_user
+      - POSTGRES_REPLICATION_PASSWORD_FILE=/run/secrets/postgres_ha_replication_password
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 --auth-local=peer
+    command: postgres -c config_file='/etc/postgresql/postgresql.conf' -c 'hba_file=/etc/postgresql/pg_hba.conf'
+    networks:
+      - postgres_ha_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  replica:
+    <<: *default-opts
+    image: postgres:${POSTGRES_TAG:-18}
+    volumes:
+      - ./setup-replica.sh:/setup-replica.sh:ro
+    configs:
+      - source: replica_config
+        target: /etc/postgresql/postgresql.auto.conf.template
+    secrets:
+      - postgres_ha_replication_user
+      - postgres_ha_replication_password
+      - postgres_ha_password
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_REPLICATION_USER_FILE=/run/secrets/postgres_ha_replication_user
+      - POSTGRES_REPLICATION_PASSWORD_FILE=/run/secrets/postgres_ha_replication_password
+      - PG_PRIMARY_HOST=db
+      - PG_PRIMARY_PORT=5432
+      - PG_DATABASE=postgres
+      - PG_USER_FILE=/run/secrets/postgres_ha_replication_user
+      - PG_PASSWORD_FILE=/run/secrets/postgres_ha_replication_password
+    command: 
+      - bash 
+      - /setup-replica.sh
+    networks:
+      - postgres_ha_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 0
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  backup:
+    <<: *default-opts
+    image: postgres:${POSTGRES_TAG:-18}
+    volumes:
+      - postgres_backup_data:/master/backup
+    secrets:
+      - postgres_ha_password
+    command:
+      - bash
+      - -c
+      - |
+        # Install cron if not present
+        apt-get update && apt-get install -y cron
+        
+        # Create backup script
+        cat > /backup.sh << 'EOF'
+        #!/bin/bash
+        DB_NAME=$DATABASE_NAME
+        DB_USER=postgres
+        DB_PASSWORD=$(cat /run/secrets/postgres_ha_password)
+        BACKUP_DIR=/master/backup
+        mkdir -p $$BACKUP_DIR
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating SQL dump of $$DB_NAME database..."
+
+        PGPASSWORD=$$DB_PASSWORD pg_dump \
+          -h db \
+          -U $$DB_USER \
+          -d $$DB_NAME \
+          --verbose \
+          --clean \
+          --no-owner \
+          --create \
+          > $$BACKUP_DIR/db_$$(date +'%Y%m%d_%H%M%S').sql
+
+        # Clean up old backups
+        find $$BACKUP_DIR -iname "db_*.sql" -mtime +$RETENTION_DAYS -exec rm -rf {} \;
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed."
+        EOF
+        
+        chmod +x /backup.sh
+        
+        # Add cron job with output redirection to stdout/stderr for Docker logging
+        echo "$BACKUP_CRON /backup.sh >> /proc/1/fd/1 2>&1" | crontab -
+        
+        # Start cron in foreground
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Backup service started with cron schedule: $BACKUP_CRON"
+        cron -f
+    networks:
+      - postgres_ha_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
+configs:
+  postgresql_config:
+    file: ./config/.postgresql.db.conf
+    name: db-config-1
+  pg_hba_config:
+    file: ./config/.pg_hba.db.conf
+    name: hba-config-1
+  replica_config:
+    file: ./config/.postgresql.replica.conf
+    name: replica-config-1
+
+secrets:
+  postgres_ha_password:
+    external: true
+  postgres_ha_replication_user:
+    external: true 
+  postgres_ha_replication_password:
+    external: true 
+      
+networks:
+  postgres_ha_network:
+    external: true
+
+volumes:
+  postgres_ha_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_POSTGRES_DATA}
+      type: none
+      o: bind
+  postgres_backup_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_POSTGRES_BACKUP}
+      type: none
+      o: bind
