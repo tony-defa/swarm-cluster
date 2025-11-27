@@ -52,9 +52,18 @@ This approach prevents the slow catch-up that would occur if the replica tried t
 To check the replication status from within the master instance, you can run the following command: `docker exec -it <postgres-primary-name> psql -U postgres -c "SELECT * FROM pg_stat_replication;"`
 
 ### Backup
-The backup service uses `pg_dump` to create logical backups of the database. The dump interval is defined in the environment variable `BACKUP_FREQUENCY`. The files are stored in `/master/backup` directory and kept for `RETENTION_DAYS` while older files will be deleted automatically.
+The backup service uses `pg_dump` to create logical backups of the database. The backup schedule is defined using a cron string in the environment variable `BACKUP_CRON`. The files are stored in `/master/backup` directory and kept for `RETENTION_DAYS` while older files will be deleted automatically.
 
 The backup is created with the `--clean --no-owner --create` options, making it suitable for restoring to a fresh database instance.
+
+#### Backup Schedule Configuration
+The `BACKUP_CRON` variable uses standard cron format: `minute hour day month weekday`
+
+Examples:
+- `0 2 * * *` - Daily at 2 AM
+- `0 */6 * * *` - Every 6 hours
+- `0 3 * * 0` - Weekly on Sunday at 3 AM
+- `0 1 1 * *` - Monthly on the 1st at 1 AM
 
 ### Restore
 To restore a backup simply deploy the `postgres` stack with an empty data volume. After that, use the following command to restore from the backup file:

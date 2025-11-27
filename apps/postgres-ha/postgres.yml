@@ -81,37 +81,48 @@ services:
     image: postgres:${POSTGRES_TAG:-18}
     volumes:
       - postgres_backup_data:/master/backup
-      - postgres_ha_data:/master/data:ro
     secrets:
       - postgres_ha_password
     command:
       - bash
       - -c
       - |
-        echo "[$(date +'"'"'%Y-%m-%d %H:%M:%S'"'"')] Backup service started. First dump will be executed in $BACKUP_FREQUENCY."
-        while true; do
-          sleep $BACKUP_FREQUENCY
-          DB_NAME=$DATABASE_NAME
-          DB_USER=postgres
-          DB_PASSWORD=$(cat /run/secrets/postgres_ha_password)
-          backup_dir=/master/backup
-          mkdir -p $backup_dir
-          echo "[$(date +'"'"'%Y-%m-%d %H:%M:%S'"'"')] Creating SQL dump of $DB_NAME database..."
-          
-          PGPASSWORD=$DB_PASSWORD pg_dump \
-            -h db \
-            -U $DB_USER \
-            -d $DB_NAME \
-            --verbose \
-            --clean \
-            --no-owner \
-            --create \
-            > $backup_dir/db_$(date +'"'"'%Y%m%d_%H%M%S'"'"').sql
-          
-          # Clean up old backups
-          find $backup_dir -iname "db_*.sql" -mtime +$RETENTION_DAYS -exec rm -rf {} \;
-          echo "[$(date +'"'"'%Y-%m-%d %H:%M:%S'"'"')] Backup completed. Next dump in $BACKUP_FREQUENCY."
-        done
+        # Install cron if not present
+        apt-get update && apt-get install -y cron
+        
+        # Create backup script
+        cat > /backup.sh << 'EOF'
+        #!/bin/bash
+        DB_NAME=$DATABASE_NAME
+        DB_USER=postgres
+        DB_PASSWORD=$(cat /run/secrets/postgres_ha_password)
+        BACKUP_DIR=/master/backup
+        mkdir -p $$BACKUP_DIR
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating SQL dump of $$DB_NAME database..."
+
+        PGPASSWORD=$$DB_PASSWORD pg_dump \
+          -h db \
+          -U $$DB_USER \
+          -d $$DB_NAME \
+          --verbose \
+          --clean \
+          --no-owner \
+          --create \
+          > $$BACKUP_DIR/db_$$(date +'%Y%m%d_%H%M%S').sql
+
+        # Clean up old backups
+        find $$BACKUP_DIR -iname "db_*.sql" -mtime +$RETENTION_DAYS -exec rm -rf {} \;
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed."
+        EOF
+        
+        chmod +x /backup.sh
+        
+        # Add cron job with output redirection to stdout/stderr for Docker logging
+        echo "$BACKUP_CRON /backup.sh >> /proc/1/fd/1 2>&1" | crontab -
+        
+        # Start cron in foreground
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Backup service started with cron schedule: $BACKUP_CRON"
+        cron -f
     networks:
       - postgres_ha_network
     deploy:
