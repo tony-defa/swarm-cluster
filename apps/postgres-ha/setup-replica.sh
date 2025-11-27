@@ -27,9 +27,9 @@ if [ -z "$(ls -A $PG_PATH)" ]; then
     BEGIN 
       IF NOT EXISTS (
         SELECT FROM pg_catalog.pg_roles 
-        WHERE rolname = '$(cat /run/secrets/postgres_ha_replication_user)'
+        WHERE rolname = '$PG_USER'
       ) THEN 
-        CREATE ROLE $(cat /run/secrets/postgres_ha_replication_user)
+        CREATE ROLE $PG_USER
         WITH REPLICATION LOGIN PASSWORD '$(cat /run/secrets/postgres_ha_replication_password)';
       END IF; 
     END 
@@ -40,7 +40,7 @@ if [ -z "$(ls -A $PG_PATH)" ]; then
 PGPASSWORD=$(cat /run/secrets/postgres_ha_replication_password) pg_basebackup \
     -h db \
     -D $PG_PATH \
-    -U $(cat /run/secrets/postgres_ha_replication_user) \
+    -U $PG_USER \
     -v \
     -P \
     -W
