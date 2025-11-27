@@ -20,9 +20,9 @@ The stack now uses separate configuration files:
 Copy `example.postgresql.db.conf`, `example.postgresql.replica.conf`, and `example.pg_hba.db.conf` to create your custom configuration.
 
 ```sh
-cp config/example.postgresql.db.conf .postgresql.db.conf
-cp config/example.postgresql.replica.conf .postgresql.replica.conf
-cp config/example.pg_hba.db.conf .pg_hba.db.conf
+cp config/example.postgresql.db.conf config/.postgresql.db.conf
+cp config/example.postgresql.replica.conf config/.postgresql.replica.conf
+cp config/example.pg_hba.db.conf config/.pg_hba.db.conf
 ```
 
 Edit the newly created config files to fit your needs. The `.postgresql.db.conf` configuration file is used for the master service, the `.postgresql.replica.conf` configuration file is for the replica service, and the `.pg_hba.db.conf` file configures client authentication. See [Postgres Documentation](https://www.postgresql.org/docs/18/runtime-config.html) for further information about postgresql.conf settings and [pg_hba.conf documentation](https://www.postgresql.org/docs/18/auth-pgodd.html) for authentication configuration.
