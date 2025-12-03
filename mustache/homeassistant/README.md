@@ -42,6 +42,16 @@ $ cp config/configuration.yaml "$(cat .view.json | jq -r '.host_ha_data')/config
 
 Edit the copied `configuration.yaml` file to fit your needs. See [Home Assistant Documentation](https://www.home-assistant.io/docs/configuration/) for further information.
 
+### Create Matter Server configuration (optional)
+
+Copy the `config/matter-server.yaml` to create your custom Matter Server configuration.
+
+```sh
+$ cp config/matter-server.yaml "$(cat .view.json | jq -r '.host_matter_data')/matter-server.yaml"
+```
+
+Edit the copied `matter-server.yaml` file to customize Matter Server settings. This file is optional as the Matter Server will work with default settings.
+
 ### Create docker secrets
 
 No docker secrets are required for this stack.
@@ -60,9 +70,9 @@ $ docker network create --attachable -d overlay mqtt_network
 
 ## Other notes
 
-### HA & z2m backup
+### HA, z2m, and Matter Server backup
 
-Backup is created automatically for Zigbee2MQTT daily at 4 am. For Home Assistant, automatic backups (starting with version 2025.1) need to be configured within Home Assistant, and they are set to start at 4:45 AM. Backups are then moved to a separate directory at 5 AM and retained for the number of days defined by `backup_retention_days` in `.view.json`. Remember to save the Home Assistant encryption key for restoring backups.
+Backup is created automatically for Zigbee2MQTT daily at 4 am. For Home Assistant, automatic backups (starting with version 2025.1) need to be configured within Home Assistant, and they are set to start at 4:45 AM. The Matter Server backup runs daily at 5:30 AM. Backups are then moved to a separate directory at 5 AM (HA) and 5:30 AM (Matter) respectively, and retained for the number of days defined by `backup_retention_days` in `.view.json`. Remember to save the Home Assistant encryption key for restoring backups.
 
 ### HA Configuration
 
@@ -87,6 +97,34 @@ bluetoothctl power on
 ### Mosquitto MQTT Broker
 
 This stack includes an optional Mosquitto MQTT broker. Mosquitto is a lightweight open-source message broker that implements the MQTT protocol, suitable for various devices from low-power single-board computers to full servers.
+
+### Matter Server
+
+This stack includes an optional Matter Server using the `ghcr.io/home-assistant-libs/python-matter-server:stable` image. Matter is a new smart home connectivity standard that enables communication across multiple IoT ecosystems.
+
+#### Matter Server Features
+- **Thread Network Support**: Enables Thread border router functionality
+- **Bluetooth Commissioning**: Local commissioning via Bluetooth for device setup
+- **mDNS Support**: Automatic device discovery on the local network
+- **Home Assistant Integration**: Seamless integration with Home Assistant's Matter integration
+
+#### Matter Server Configuration
+The Matter Server is configured with:
+- Host networking for mDNS and Thread support
+- D-Bus access for Bluetooth functionality
+- Data persistence through dedicated volume storage
+- Node placement constraints for hardware device access
+- Automated backup system
+
+#### Network Requirements for Matter
+The Matter Server requires host networking mode for proper operation:
+- **mDNS**: Required for device discovery
+- **Thread Protocol**: Requires direct network access
+- **Bluetooth**: Needs D-Bus access for commissioning
+
+#### Service Dependencies
+Optional stacks are:
+- No additional mandatory dependencies beyond Traefik
 
 ### Network Configuration for `macvlan_swarm`
 

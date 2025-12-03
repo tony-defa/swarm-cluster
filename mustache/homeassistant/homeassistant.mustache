@@ -29,6 +29,9 @@ services:
       {{#use_z2m}}
       - mqtt
       {{/use_z2m}}
+      {{#use_matter}}
+      - matter_network
+      {{/use_matter}}
     {{#ha_publish_ports}}
     ports:
     {{#ha_ports}}
@@ -188,6 +191,74 @@ services:
         condition: on-failure
         delay: 600s
   {{/use_z2m}}
+
+  {{#use_matter}}
+  matter-server:
+    <<: *default-opts
+    image: ghcr.io/home-assistant-libs/python-matter-server:{{matter_tag}}
+    networks:
+      - matter_network
+    {{#matter_publish_ports}}
+    ports:
+    {{#matter_ports}}
+      - target: {{target}}
+        published: {{published}}
+        protocol: {{protocol}}
+        mode: {{mode}}
+    {{/matter_ports}}
+    {{/matter_publish_ports}}
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - matter_data:/data
+      - /run/dbus:/run/dbus:ro
+    command: --storage-path /data --paa-root-cert-dir /data/credentials --bluetooth-adapter 0
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: any
+      {{#constrain_z2m_to}}
+      placement:
+        constraints:
+          - node.hostname == {{{constrain_matter_to}}}
+      {{/constrain_z2m_to}}
+
+  backup_matter:
+    <<: *default-opts
+    image: alpine:latest
+    volumes:
+      - backup_dir:/backup
+      - matter_data:/data
+    command:
+      - sh
+      - -c
+      - |
+        SECS=$$(expr `date -d "05:30" +%s` + 86400 - `date +%s`);
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Matter Server backup service started. First backup will be executed at 5:30 AM.";
+        sleep $$SECS
+        while true; do
+          backup_dir=/backup;
+          mkdir -p $$backup_dir;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of Matter Server...";
+          
+          # Create a compressed archive of the matter server data
+          if [ -d "/data" ]; then
+            tar -czf "$$backup_dir/matter_backup_$$(date +%Y-%m-%d_%H-%M-%S).tar.gz" -C /data .
+            
+            # Remove old backups older than RETENTION_DAYS
+            find $$backup_dir -iname "matter_backup_*.tar.gz" -mtime +{{backup_retention_days}} -exec rm -rf {} \;
+            echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Matter Server backup completed. Next backup in {{backup_frequency}}.";
+          else
+            echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Matter Server data directory not found. Skipping backup.";
+          fi
+          sleep {{backup_frequency}};
+        done
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+  {{/use_matter}}
   
   backup_ha:
     <<: *default-opts
@@ -239,6 +310,11 @@ networks:
   mqtt:
     driver: overlay
   {{/use_z2m}}
+
+  {{#use_matter}}
+  matter_network:
+    driver: overlay
+  {{/use_matter}}
 
 volumes:
   ha_config:
@@ -298,6 +374,22 @@ volumes:
       o: bind
     {{/nfs_share_ip}}
   {{/use_z2m}}
+
+  {{#use_matter}}
+  matter_data:
+    driver: local
+    driver_opts:
+    {{#nfs_share_ip}}
+      device: ":{{{host_matter_data}}}"
+      type: nfs
+      o: addr={{nfs_share_ip}},rw,sync,nfsvers=4.1
+    {{/nfs_share_ip}}
+    {{^nfs_share_ip}}
+      device: {{{host_matter_data}}}
+      type: none
+      o: bind
+    {{/nfs_share_ip}}
+  {{/use_matter}}
 
   backup_dir:
     driver: local
