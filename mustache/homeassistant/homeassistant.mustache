@@ -29,9 +29,6 @@ services:
       {{#use_z2m}}
       - mqtt
       {{/use_z2m}}
-      {{#use_matter}}
-      - matter_network
-      {{/use_matter}}
     {{#ha_publish_ports}}
     ports:
     {{#ha_ports}}
@@ -197,7 +194,7 @@ services:
     <<: *default-opts
     image: ghcr.io/home-assistant-libs/python-matter-server:{{matter_tag}}
     networks:
-      - matter_network
+      - macvlan_swarm
     {{#matter_publish_ports}}
     ports:
     {{#matter_ports}}
@@ -310,11 +307,6 @@ networks:
   mqtt:
     driver: overlay
   {{/use_z2m}}
-
-  {{#use_matter}}
-  matter_network:
-    driver: overlay
-  {{/use_matter}}
 
 volumes:
   ha_config:
