@@ -207,8 +207,6 @@ services:
         mode: {{mode}}
     {{/matter_ports}}
     {{/matter_publish_ports}}
-    security_opt:
-      - apparmor:unconfined
     volumes:
       - matter_data:/data
       - /run/dbus:/run/dbus:ro
