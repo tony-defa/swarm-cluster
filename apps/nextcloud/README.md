@@ -28,7 +28,10 @@ External secrets from service dependencies are required.
 No network needs to be created.
 
 ## Other notes
+### Nextcloud-cron
+The nextcloud-cron service is present to fire up the cron.d so that the cron-jobs inside of the nextcloud service would be run as expected. It's needed, because the cron.d service is not part of the nextcloud container itself.
+
 ### Backup
-The backup service securely backs up the all data files into a compressed tar archive. The backup interval is defined in the environment variable `BACKUP_FREQUENCY`. Old archives are deleted automatically after the amount of days specified in the environment variable `RETENTION_DAYS`. 
+The backup service securely backs up the all data files into a compressed tar archive. The backup interval is defined in the environment variable `BACKUP_FREQUENCY`. Old archives are deleted automatically after the amount of days specified in the environment variable `RETENTION_DAYS`.
 
 The database is not backed up by this service. This is taken care of the separate database stack found in `apps/mariadb.yml`.
