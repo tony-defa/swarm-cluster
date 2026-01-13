@@ -48,6 +48,20 @@ services:
         traefik.http.middlewares.nextcloud-redirectregex.redirectregex.permanent: "true"
         traefik.http.routers.nextcloud.middlewares: nextcloud-redirectregex
 
+  nextcloud-cron:
+    <<: *default-opts
+    image: nextcloud:${NEXTCLOUD_TAG}
+    entrypoint: /cron.sh
+    volumes:
+      - nextcloud_storage:/var/www/html/data
+      - nextcloud_data:/var/www/html
+    networks:
+      - mariadb_network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
   backup:
     <<: *default-opts
     image: alpine:latest
