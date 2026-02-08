@@ -4,7 +4,7 @@ This stack provides Home Assistant, an open-source home automation platform, alo
 
 ### `homeassistant.mustache`
 
-This file is a mustache template for the Docker Compose stack file. It defines the services for Home Assistant, Mosquitto MQTT broker (optional), and Zigbee2MQTT (optional), along with volumes, networks, and deployment configurations. The template uses variables defined in the `example.view.json` file to dynamically generate the stack file.
+This file is a mustache template for the Docker Compose stack file. It defines the services for Home Assistant, Mosquitto MQTT broker (optional), Zigbee2MQTT (optional), and Matter server (optional), along with volumes, networks, and deployment configurations. The template uses variables defined in the `example.view.json` file to dynamically generate the stack file.
 
 ### `example.view.json`
 
@@ -100,31 +100,13 @@ This stack includes an optional Mosquitto MQTT broker. Mosquitto is a lightweigh
 
 ### Matter Server
 
-This stack includes an optional Matter Server using the `ghcr.io/home-assistant-libs/python-matter-server:stable` image. Matter is a new smart home connectivity standard that enables communication across multiple IoT ecosystems.
+This stack includes an optional Matter Server using the `ghcr.io/home-assistant-libs/python-matter-server:stable` image.
 
-#### Matter Server Features
-- **Thread Network Support**: Enables Thread border router functionality
-- **Bluetooth Commissioning**: Local commissioning via Bluetooth for device setup
-- **mDNS Support**: Automatic device discovery on the local network
-- **Home Assistant Integration**: Seamless integration with Home Assistant's Matter integration
-
-#### Matter Server Configuration
-The Matter Server is configured with:
-- Host networking for mDNS and Thread support
-- D-Bus access for Bluetooth functionality
-- Data persistence through dedicated volume storage
-- Node placement constraints for hardware device access
-- Automated backup system
-
-#### Network Requirements for Matter
+#### Network Requirements for Matter Service
 The Matter Server requires host networking mode for proper operation:
 - **mDNS**: Required for device discovery
 - **Thread Protocol**: Requires direct network access
 - **Bluetooth**: Needs D-Bus access for commissioning
-
-#### Service Dependencies
-Optional stacks are:
-- No additional mandatory dependencies beyond Traefik
 
 ### Network Configuration for `macvlan_swarm`
 
