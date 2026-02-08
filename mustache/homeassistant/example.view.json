@@ -5,12 +5,14 @@
     "host_z2m": "/cluster/homeassistant/z2m",
     "host_mqtt_data": "/cluster/homeassistant/mqtt_data",
     "host_mqtt_config": "/cluster/homeassistant/mqtt_config",
+    "host_matter_data": "/cluster/homeassistant/matter",
     "host_backup": "/cluster/homeassistant/backup",
 
     "__comment2": "Image tags",
     "ha_tag": "stable",
     "z2m_tag": "latest",
     "mqtt_tag": "latest",
+    "matter_tag": "stable",
 
     "__comment3": "Proxy configuration",
     "service_name": "homeassistant",
@@ -31,6 +33,10 @@
     "mqtt_ports": [
         {"target": 1883, "published": 1883, "protocol": "tcp", "mode": "ingress"}
     ],
+    "matter_publish_ports": false,
+    "matter_ports": [
+        {"target": 5580, "published": 5580, "protocol": "tcp", "mode": "ingress"}
+    ],
 
     "__comment5": "Other configuration",
     "env_file": "example.env",
@@ -39,6 +45,8 @@
     "use_z2m": true,
     "zigbee_device": "/dev/ttyUSB0",
     "constrain_z2m_to": "node-1",
+    "use_matter": true,
+    "constrain_matter_to": "node-1",
     "gelf_address": null,
     "nfs_share_ip": null
 }
