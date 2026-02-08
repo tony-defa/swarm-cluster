@@ -49,6 +49,28 @@ services:
       restart_policy:
         condition: on-failure
 
+  backup:
+    <<: *default-opts
+    image: postgres:${POSTGRES_TAG}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - backup:/backup
+    command: > 
+      - sh
+      - -c
+      - | 
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started.;
+        while true; do
+          pg_dump -U ${POSTGRES_USER} -d ${POSTGRES_DB} | gzip > /backup/metamcp_backup_\$(date +%Y%m%d_%H%M%S).sql.gz
+          find /backup -name 'metamcp_backup_*.sql.gz' -mtime +${RETENTION_DAYS:-14} -delete
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in $$BACKUP_FREQUENCY.";
+          sleep ${BACKUP_FREQUENCY:-24h}
+        done
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
 networks:
   proxy_network:
     external: true
@@ -61,5 +83,12 @@ volumes:
     driver: local
     driver_opts:
       device: ${HOST_POSTGRES_DATA}
+      type: none
+      o: bind
+  
+  backup:
+    driver: local
+    driver_opts:
+      device: ${HOST_BACKUP_PATH}
       type: none
       o: bind

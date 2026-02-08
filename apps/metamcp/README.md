@@ -3,7 +3,7 @@
 MetaMCP is an open-source platform for building and deploying Model Context Protocol (MCP) servers. It provides a web interface for creating, testing, and managing MCP servers that can be integrated with AI models like Claude Desktop.
 
 ### `metamcp.yml`
-Contains the MetaMCP application and PostgreSQL database.
+Contains the MetaMCP application, the PostgreSQL database and a backup service.
 
 ## Prerequisites
 ### Storage
@@ -31,3 +31,6 @@ By default, MetaMCP uses basic authentication. For production deployments, confi
 
 ### OIDC Authentication
 Optional OpenID Connect authentication can be enabled by configuring the OIDC environment variables in the `.env` file.
+
+### Backup
+The postgres database is backed up using `pg_dump` with `gzip` compression. For restoring dumps `pg_restore` can be used.
