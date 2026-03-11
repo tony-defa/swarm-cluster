@@ -138,9 +138,11 @@ deploy_stack() {
     echo "Deploying stack with env file: $env_file"
 
     # Deploy using compose config (with .env file)
+    # TODO: sed for cpus is added due to this unsolved issue: https://github.com/docker/cli/issues/5009
     docker compose -f "$compose_file" --env-file "$env_file" config --no-normalize | \
       grep -v '^name' | \
       sed '/published:/ s/"//g' | \
+      sed -e 's/cpus:\s\(.*\)/cpus: "\1"/' | \
       docker stack deploy --with-registry-auth -c - "$STACK_NAME"
   else
     echo "No .env file found in $STACK_DIR - using direct stack deploy"
