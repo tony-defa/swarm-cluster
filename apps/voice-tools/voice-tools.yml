@@ -23,10 +23,10 @@ services:
       resources:
         limits:
           memory: ${MEM_LIMIT:-2g}
-          cpus: "${CPU_LIMIT:-2.0}"
+          cpus: ${CPU_LIMIT:-2.0}
         reservations:
           memory: ${MEM_RESERVATION:-1g}
-          cpus: "${CPU_RESERVATION:-1.0}"
+          cpus: ${CPU_RESERVATION:-1.0}
 
   faster-whisper:
     <<: *default-opts
@@ -45,10 +45,10 @@ services:
       resources:
         limits:
           memory: ${MEM_LIMIT:-2g}
-          cpus: "${CPU_LIMIT:-2.0}"
+          cpus: ${CPU_LIMIT:-2.0}
         reservations:
           memory: ${MEM_RESERVATION:-1g}
-          cpus: "${CPU_RESERVATION:-1.0}"
+          cpus: ${CPU_RESERVATION:-1.0}
 
 networks:
   macvlan_swarm:
