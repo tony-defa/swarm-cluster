@@ -1,0 +1,70 @@
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+
+services:
+  piper:
+    <<: *default-opts
+    image: lscr.io/linuxserver/piper:${PIPER_TAG:-latest}
+    volumes:
+      - piper_data:/config
+    ports:
+      - ${PIPER_PORT:-10200}:10200
+    networks:
+      - macvlan_swarm
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: ${MEM_LIMIT:-2g}
+          cpus: ${CPU_LIMIT:-2.0}
+        reservations:
+          memory: ${MEM_RESERVATION:-1g}
+          cpus: ${CPU_RESERVATION:-1.0}
+
+  faster-whisper:
+    <<: *default-opts
+    image: lscr.io/linuxserver/faster-whisper:${FASTER_WHISPER_TAG:-latest}
+    volumes:
+      - faster_whisper_data:/config
+    ports:
+      - ${FASTER_WHISPER_PORT:-10300}:10300
+    networks:
+      - macvlan_swarm
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: ${MEM_LIMIT:-2g}
+          cpus: ${CPU_LIMIT:-2.0}
+        reservations:
+          memory: ${MEM_RESERVATION:-1g}
+          cpus: ${CPU_RESERVATION:-1.0}
+
+networks:
+  macvlan_swarm:
+    external: true
+
+volumes:
+  piper_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_PIPER_DATA}
+      type: none
+      o: bind
+
+  faster_whisper_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_FASTER_WHISPER_DATA}
+      type: none
+      o: bind
