@@ -10,7 +10,7 @@ services:
     <<: *default-opts
     image: xlrl/mantisbt:${MANTISBT_TAG}
     volumes:
-      - mantisbt_data:/var/www/html/config
+      - mantisbt_data:/var/www/html
     secrets:
       - mantisbt_db_database
       - mantisbt_db_user
