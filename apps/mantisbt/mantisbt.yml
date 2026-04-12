@@ -5,6 +5,7 @@ x-default-opts: &default-opts
     options:
       max-size: "1m"
 
+services:
   mantisbt:
     <<: *default-opts
     image: xlrl/mantisbt:${MANTISBT_TAG}
@@ -41,7 +42,6 @@ x-default-opts: &default-opts
       timeout: 10s
       retries: 3
 
-services:
   db:
     <<: *default-opts
     image: mariadb:${MARIADB_TAG}
