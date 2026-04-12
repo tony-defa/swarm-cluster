@@ -5,6 +5,42 @@ x-default-opts: &default-opts
     options:
       max-size: "1m"
 
+  mantisbt:
+    <<: *default-opts
+    image: xlrl/mantisbt:${MANTISBT_TAG}
+    volumes:
+      - mantisbt_data:/var/www/html/config
+    secrets:
+      - mantisbt_db_database
+      - mantisbt_db_user
+      - mantisbt_db_password
+    environment:
+      - MANTISBT_DB_HOST=db
+      - MANTISBT_DB_NAME_FILE=/run/secrets/mantisbt_db_database
+      - MANTISBT_DB_USER_FILE=/run/secrets/mantisbt_db_user
+      - MANTISBT_DB_PASSWORD_FILE=/run/secrets/mantisbt_db_password
+    networks:
+      - mantis_network
+      - proxy_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.mantisbt.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.mantisbt.rule: Host(`${DOMAIN:-mantis.host.local}`)
+        traefik.http.routers.mantisbt.service: mantisbt
+        traefik.http.services.mantisbt.loadbalancer.server.port: 80
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/login.php"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 services:
   db:
     <<: *default-opts
@@ -31,7 +67,7 @@ services:
       - --binlog-format=ROW
       - --innodb-read-only-compressed=OFF
     networks:
-      - mantisbt_internal
+      - mantis_network
     deploy:
       replicas: 1
       update_config:
@@ -50,67 +86,31 @@ services:
     image: mariadb:${MARIADB_TAG}
     volumes:
       - mantisbt_db_backup:/backup
+      - mantisbt_data:/data
     secrets:
       - mantisbt_db_root_password
     command:
       - sh
       - -c
       - |
-        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First dump will be executed in $$BACKUP_FREQUENCY.";
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed in $$BACKUP_FREQUENCY.";
         while true; do
-          sleep $$BACKUP_FREQUENCY;
           DB_PASSWORD=$$(cat /run/secrets/mantisbt_db_root_password);
-          backup_dir=/backup;
+          backup_dir=/backup/mantisbt_$$(date +'%Y%m%d_%H%M%S');
           mkdir -p $$backup_dir;
-          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating SQL dump of mantisbt database...";
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of MantisBT including SQL dump of database...";
           /usr/bin/mariadb-dump -u root --password=$$DB_PASSWORD --host=db --all-databases --no-tablespaces > $$backup_dir/mantisbt_db_$$(date +'%Y%m%d_%H%M%S').sql;
-          find $$backup_dir -iname "mantisbt_db_*.sql" -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
-          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next dump in $$BACKUP_FREQUENCY.";
+          tar -C /data/ -cvzf $$backup_dir/data.tar.gz .;
+          find /backup/mantisbt_* -iname -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in $$BACKUP_FREQUENCY.";
+          sleep $$BACKUP_FREQUENCY;
         done
     networks:
-      - mantisbt_internal
+      - mantis_network
     deploy:
       restart_policy:
         condition: on-failure
         delay: 600s
-
-  mantisbt:
-    <<: *default-opts
-    image: mantisbt/mantisbt:${MANTISBT_TAG}
-    volumes:
-      - mantisbt_data:/var/www/html/config
-    secrets:
-      - mantisbt_db_database
-      - mantisbt_db_user
-      - mantisbt_db_password
-    environment:
-      - MANTISBT_DB_HOST=db
-      - MANTISBT_DB_NAME_FILE=/run/secrets/mantisbt_db_database
-      - MANTISBT_DB_USER_FILE=/run/secrets/mantisbt_db_user
-      - MANTISBT_DB_PASSWORD_FILE=/run/secrets/mantisbt_db_password
-    networks:
-      - mantisbt_internal
-      - proxy_network
-    deploy:
-      replicas: 1
-      update_config:
-        parallelism: 1
-        delay: 10s
-      restart_policy:
-        condition: on-failure
-      labels:
-        - traefik.enable=true
-        - traefik.docker.network=proxy_network
-        - traefik.http.routers.mantisbt.entrypoints=https
-        - traefik.http.routers.mantisbt.rule=Host(`${MANTISBT_HOST}`)
-        - traefik.http.services.mantisbt.loadbalancer.server.port=80
-    depends_on:
-      - db
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/login.php"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
 secrets:
   mantisbt_db_database:
@@ -123,8 +123,9 @@ secrets:
     external: true
 
 networks:
-  mantisbt_internal:
-    external: true
+  mantis_network:
+    driver: overlay
+
   proxy_network:
     external: true
 
