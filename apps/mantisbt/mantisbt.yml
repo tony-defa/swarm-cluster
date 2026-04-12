@@ -1,0 +1,152 @@
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+
+services:
+  mantisbt:
+    <<: *default-opts
+    image: xlrl/mantisbt:${MANTISBT_TAG}
+    volumes:
+      - mantisbt_data:/var/www/html
+    secrets:
+      - mantisbt_db_database
+      - mantisbt_db_user
+      - mantisbt_db_password
+    environment:
+      - MANTISBT_DB_HOST=db
+      - MANTISBT_DB_NAME_FILE=/run/secrets/mantisbt_db_database
+      - MANTISBT_DB_USER_FILE=/run/secrets/mantisbt_db_user
+      - MANTISBT_DB_PASSWORD_FILE=/run/secrets/mantisbt_db_password
+    networks:
+      - mantis_network
+      - proxy_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.mantisbt.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.mantisbt.rule: Host(`${DOMAIN:-mantis.host.local}`)
+        traefik.http.routers.mantisbt.service: mantisbt
+        traefik.http.services.mantisbt.loadbalancer.server.port: 80
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/login.php"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  db:
+    <<: *default-opts
+    image: mariadb:${MARIADB_TAG}
+    volumes:
+      - mantisbt_db_data:/var/lib/mysql
+    secrets:
+      - mantisbt_db_database
+      - mantisbt_db_user
+      - mantisbt_db_password
+      - mantisbt_db_root_password
+    environment:
+      - MARIADB_DATABASE_FILE=/run/secrets/mantisbt_db_database
+      - MARIADB_USER_FILE=/run/secrets/mantisbt_db_user
+      - MARIADB_PASSWORD_FILE=/run/secrets/mantisbt_db_password
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/mantisbt_db_root_password
+    command:
+      - mariadbd
+      - --wait_timeout=28800
+      - --interactive_timeout=28800
+      - --max_allowed_packet=256M
+      - --transaction-isolation=READ-COMMITTED
+      - --max_connections=200
+      - --binlog-format=ROW
+      - --innodb-read-only-compressed=OFF
+    networks:
+      - mantis_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "--password=$$(cat /run/secrets/mantisbt_db_root_password)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  db-backup:
+    <<: *default-opts
+    image: mariadb:${MARIADB_TAG}
+    volumes:
+      - mantisbt_db_backup:/backup
+      - mantisbt_data:/data
+    secrets:
+      - mantisbt_db_root_password
+    command:
+      - sh
+      - -c
+      - |
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed in $$BACKUP_FREQUENCY.";
+        while true; do
+          DB_PASSWORD=$$(cat /run/secrets/mantisbt_db_root_password);
+          backup_dir=/backup/mantisbt_$$(date +'%Y%m%d_%H%M%S');
+          mkdir -p $$backup_dir;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of MantisBT including SQL dump of database...";
+          /usr/bin/mariadb-dump -u root --password=$$DB_PASSWORD --host=db --all-databases --no-tablespaces > $$backup_dir/mantisbt_db_$$(date +'%Y%m%d_%H%M%S').sql;
+          tar -C /data/ -cvzf $$backup_dir/data.tar.gz .;
+          find /backup/mantisbt_* -iname -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in $$BACKUP_FREQUENCY.";
+          sleep $$BACKUP_FREQUENCY;
+        done
+    networks:
+      - mantis_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
+secrets:
+  mantisbt_db_database:
+    external: true
+  mantisbt_db_user:
+    external: true
+  mantisbt_db_password:
+    external: true
+  mantisbt_db_root_password:
+    external: true
+
+networks:
+  mantis_network:
+    driver: overlay
+
+  proxy_network:
+    external: true
+
+volumes:
+  mantisbt_db_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_MANTISBT_DB_DATA}
+      type: none
+      o: bind
+
+  mantisbt_db_backup:
+    driver: local
+    driver_opts:
+      device: ${HOST_MANTISBT_DB_BACKUP}
+      type: none
+      o: bind
+
+  mantisbt_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_MANTISBT_DATA}
+      type: none
+      o: bind
