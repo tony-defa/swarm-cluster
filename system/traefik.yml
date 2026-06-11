@@ -109,7 +109,7 @@ services:
     # secrets:
     #   - hetzner_dns_token
     # environment:
-    #   - HETZNER_API_KEY_FILE=/run/secrets/hetzner_dns_token
+    #   - HETZNER_API_TOKEN_FILE=/run/secrets/hetzner_dns_token
 
     ## Cloudflare secrets
     # secrets:
