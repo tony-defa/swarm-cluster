@@ -1,0 +1,37 @@
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+
+services:
+  calrs:
+    <<: *default-opts
+    image: ghcr.io/olivierlambert/calrs:${CALRS_TAG}
+    volumes:
+      - data:/var/lib/calrs
+    networks:
+      - proxy_network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.calrs.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.calrs.rule: Host(`${DOMAIN:-calrs.host.local}`)
+        traefik.http.routers.calrs.service: calrs
+        traefik.http.services.calrs.loadbalancer.server.port: 3000
+
+networks:
+  proxy_network:
+    external: true
+
+volumes:
+  data:
+    driver: local
+    driver_opts:
+      device: ${HOST_CALRS_DATA}
+      type: none
+      o: bind
