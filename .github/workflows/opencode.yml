@@ -31,3 +31,6 @@ jobs:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
         with:
           model: opencode/deepseek-v4-flash-free
+          prompt: |
+            Before processing any request, read the AGENTS.md file in the repository root for additional instructions and constraints.
+            Then proceed with the requested task.
