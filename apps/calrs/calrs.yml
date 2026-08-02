@@ -11,6 +11,8 @@ services:
     image: ghcr.io/olivierlambert/calrs:${CALRS_TAG}
     volumes:
       - data:/var/lib/calrs
+    environment:
+      CALRS_BASE_URL: ${CALRS_BASE_URL}
     networks:
       - proxy_network
     deploy:
@@ -24,6 +26,31 @@ services:
         traefik.http.routers.calrs.service: calrs
         traefik.http.services.calrs.loadbalancer.server.port: 3000
 
+  backup:
+    <<: *default-opts
+    image: alpine:latest
+    volumes:
+      - data:/var/lib/calrs
+      - backup:/backup
+    command:
+      - sh
+      - -c
+      - |
+        apk add --no-cache sqlite;
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed in $$BACKUP_FREQUENCY.";
+        while true; do
+          backup_file=/backup/calrs_backup_$$(date +%Y%m%d_%H%M%S).sqlite.gz;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating backup of CalRS SQLite database...";
+          sqlite3 /var/lib/calrs/data.db .dump | gzip > $$backup_file;
+          find /backup -name 'calrs_backup_*.sqlite.gz' -mtime +$$RETENTION_DAYS -delete;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in $$BACKUP_FREQUENCY.";
+          sleep $$BACKUP_FREQUENCY;
+        done
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+
 networks:
   proxy_network:
     external: true
@@ -33,5 +60,12 @@ volumes:
     driver: local
     driver_opts:
       device: ${HOST_CALRS_DATA}
+      type: none
+      o: bind
+
+  backup:
+    driver: local
+    driver_opts:
+      device: ${HOST_CALRS_BACKUP}
       type: none
       o: bind
