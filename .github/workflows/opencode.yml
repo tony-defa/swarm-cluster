@@ -31,7 +31,6 @@ jobs:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
             #KILO_API_KEY: ${{ secrets.KILO_API_KEY }}
         with:
-          #model: opencode/big-pickle
-          model: big-pickle
+          model: opencode/big-pickle
           #model: kilo/kilo-auto/free
           #prompt: Before processing any request, read the AGENTS.md file in the repository root for additional instructions and constraints. Then proceed with the requested task.
