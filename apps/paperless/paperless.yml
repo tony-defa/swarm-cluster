@@ -1,0 +1,200 @@
+x-default-opts: &default-opts
+  env_file:
+    .env
+  logging:
+    options:
+      max-size: "1m"
+
+services:
+  paperless:
+    <<: *default-opts
+    image: ghcr.io/paperless-ngx/paperless-ngx:${PAPERLESS_TAG}
+    volumes:
+      - paperless_data:/usr/src/paperless/data
+      - paperless_media:/usr/src/paperless/media
+      - paperless_export:/usr/src/paperless/export
+      - paperless_consume:/usr/src/paperless/consume
+    secrets:
+      - paperless_secret_key
+      - paperless_db_password
+    environment:
+      - PAPERLESS_SECRET_KEY_FILE=/run/secrets/paperless_secret_key
+      - PAPERLESS_DBHOST=db
+      - PAPERLESS_DBNAME=${PAPERLESS_DBNAME:-paperless}
+      - PAPERLESS_DBUSER=${PAPERLESS_DBUSER:-paperless}
+      - PAPERLESS_DBPASS_FILE=/run/secrets/paperless_db_password
+      - PAPERLESS_REDIS=redis://redis:6379
+      - PAPERLESS_URL=https://${DOMAIN:-paperless.host.local}
+      - PAPERLESS_TIME_ZONE=${TZ:-Europe/Berlin}
+      - PAPERLESS_CONSUMPTION_DIR=/usr/src/paperless/consume
+      - PAPERLESS_DATA_DIR=/usr/src/paperless/data
+      - PAPERLESS_MEDIA_ROOT=/usr/src/paperless/media
+      - PAPERLESS_OCR_LANGUAGE=${PAPERLESS_OCR_LANGUAGE:-eng}
+      - USERMAP_UID=${USERMAP_UID:-1000}
+      - USERMAP_GID=${USERMAP_GID:-1000}
+    networks:
+      - paperless_network
+      - proxy_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1'
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.paperless.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.paperless.rule: Host(`${DOMAIN:-paperless.host.local}`)
+        traefik.http.routers.paperless.service: paperless
+        traefik.http.services.paperless.loadbalancer.server.port: 8000
+
+  db:
+    <<: *default-opts
+    image: postgres:${POSTGRES_TAG}
+    volumes:
+      - paperless_db_data:/var/lib/postgresql
+    secrets:
+      - paperless_db_password
+    environment:
+      - POSTGRES_DB=${PAPERLESS_DBNAME:-paperless}
+      - POSTGRES_USER=${PAPERLESS_DBUSER:-paperless}
+      - POSTGRES_PASSWORD_FILE=/run/secrets/paperless_db_password
+    networks:
+      - paperless_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PAPERLESS_DBUSER:-paperless} -d ${PAPERLESS_DBNAME:-paperless}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 512M
+
+  redis:
+    <<: *default-opts
+    image: redis:${REDIS_TAG}
+    networks:
+      - paperless_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 256M
+
+  backup:
+    <<: *default-opts
+    image: postgres:${POSTGRES_TAG}
+    volumes:
+      - paperless_data:/paperless_data
+      - paperless_media:/paperless_media
+      - paperless_export:/paperless_export
+      - paperless_consume:/paperless_consume
+      - paperless_backup:/backup
+    secrets:
+      - paperless_db_password
+    networks:
+      - paperless_network
+    command:
+      - sh
+      - -c
+      - |
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup service started. First backup will be executed in $$BACKUP_FREQUENCY.";
+        while true; do
+          sleep $$BACKUP_FREQUENCY;
+          backup_dir=/backup/paperless_$$(date +'%Y%m%d_%H%M%S');
+          mkdir -p $$backup_dir;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating database dump...";
+          PGPASSWORD=$$(cat /run/secrets/paperless_db_password) pg_dump -U ${PAPERLESS_DBUSER:-paperless} -d ${PAPERLESS_DBNAME:-paperless} -h db > $$backup_dir/db.sql;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating data archive...";
+          tar -czf $$backup_dir/paperless_data.tar.gz -C /paperless_data .;
+          tar -czf $$backup_dir/paperless_media.tar.gz -C /paperless_media .;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Cleaning up backups older than $$RETENTION_DAYS days...";
+          find /backup/paperless_* -mtime +$$RETENTION_DAYS -exec rm -rf {} \;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed. Next backup in $$BACKUP_FREQUENCY.";
+        done
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+      resources:
+        limits:
+          memory: 256M
+
+networks:
+  proxy_network:
+    external: true
+
+  paperless_network:
+    driver: overlay
+
+volumes:
+  paperless_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_PAPERLESS_DATA}
+      type: none
+      o: bind
+
+  paperless_media:
+    driver: local
+    driver_opts:
+      device: ${HOST_PAPERLESS_MEDIA}
+      type: none
+      o: bind
+
+  paperless_export:
+    driver: local
+    driver_opts:
+      device: ${HOST_PAPERLESS_EXPORT}
+      type: none
+      o: bind
+
+  paperless_consume:
+    driver: local
+    driver_opts:
+      device: ${HOST_PAPERLESS_CONSUME}
+      type: none
+      o: bind
+
+  paperless_db_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_PAPERLESS_DB_DATA}
+      type: none
+      o: bind
+
+  paperless_backup:
+    driver: local
+    driver_opts:
+      device: ${HOST_PAPERLESS_BACKUP}
+      type: none
+      o: bind
+
+secrets:
+  paperless_secret_key:
+    external: true
+  paperless_db_password:
+    external: true
