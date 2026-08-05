@@ -57,7 +57,7 @@ services:
     <<: *default-opts
     image: postgres:${POSTGRES_TAG}
     volumes:
-      - paperless_db_data:/var/lib/postgresql/data
+      - paperless_db_data:/var/lib/postgresql
     secrets:
       - paperless_db_password
     environment:
