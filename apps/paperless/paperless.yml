@@ -46,6 +46,10 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1'
       labels:
         traefik.enable: "true"
         traefik.http.routers.paperless.entrypoints: ${ENTRYPOINT:-websecure}
