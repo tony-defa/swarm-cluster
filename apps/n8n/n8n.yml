@@ -39,7 +39,7 @@ services:
       labels:
         traefik.enable: "true"
         traefik.http.routers.n8n.entrypoints: ${ENTRYPOINT:-websecure}
-        traefik.http.routers.n8n.rule: Host(`${DOMAIN-n8n.host.local}`)
+        traefik.http.routers.n8n.rule: Host(`${DOMAIN:-n8n.host.local}`)
         traefik.http.services.n8n.loadbalancer.server.port: 5678
       resources:
         limits:
