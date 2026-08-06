@@ -12,13 +12,16 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
     environment:
-      - DB_TYPE=postgres
-      - DB_POSTGRES_HOST=db
-      - DB_POSTGRES_DATABASE=${POSTGRES_DB}
-      - DB_POSTGRES_USER_FILE=/run/secrets/n8n_db_user
-      - DB_POSTGRES_PASSWORD_FILE=/run/secrets/n8n_db_password
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=db
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER_FILE=/run/secrets/n8n_db_user
+      - DB_POSTGRESDB_PASSWORD_FILE=/run/secrets/n8n_db_password
       - N8N_EDITOR_BASE_URL=http://${DOMAIN-n8n.host.local}
-      - WEBHOOK_URL=http://${DOMAIN-n8n.host.local}/
+      - N8N_WEBHOOK_URL=http://${DOMAIN-n8n.host.local}/
+      - N8N_PROXY_HOPS=${N8N_PROXY_HOPS:-1}
+      - N8N_DIAGNOSTICS_ENABLED=${N8N_DIAGNOSTICS_ENABLED:-true}
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=${N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS:-true}
     secrets:
       - n8n_db_user
       - n8n_db_password
