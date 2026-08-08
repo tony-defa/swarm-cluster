@@ -118,8 +118,9 @@ create_host_directories() {
     if [ ! -d "$dir" ]; then
       echo "Creating directory: $dir"
       sudo mkdir -p "$dir"
-      sudo chown -R :docker "$dir"
     fi
+    sudo chown -R :docker "$dir"
+    sudo chmod -R g+w "$dir"
   done
 }
 
@@ -279,10 +280,13 @@ create_host_directories_from_view() {
 
   if [ $? -eq 0 ] && [ -n "$host_paths" ]; then
     echo "$host_paths" | while read -r dir; do
-      if [ -n "$dir" ] && [ ! -d "$dir" ]; then
-        echo "Creating host directory: $dir"
-        sudo mkdir -p "$dir"
+      if [ -n "$dir" ]; then
+        if [ ! -d "$dir" ]; then
+          echo "Creating host directory: $dir"
+          sudo mkdir -p "$dir"
+        fi
         sudo chown -R :docker "$dir"
+        sudo chmod -R g+w "$dir"
       fi
     done
   fi
