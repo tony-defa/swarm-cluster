@@ -78,7 +78,6 @@ services:
     secrets:
       - source: immich_db_password
         target: immich_db_password
-    shm_size: 128mb
     networks:
       - immich_network
     deploy:
