@@ -35,3 +35,6 @@ The nextcloud-cron service is present to fire up the cron.d so that the cron-job
 The backup service securely backs up the all data files into a compressed tar archive. The backup interval is defined in the environment variable `BACKUP_FREQUENCY`. Old archives are deleted automatically after the amount of days specified in the environment variable `RETENTION_DAYS`.
 
 The database is not backed up by this service. This is taken care of the separate database stack found in `apps/mariadb.yml`.
+
+### Nextcloud-db-maintenance
+The nextcloud-db-maintenance service periodically runs the Nextcloud command `occ db:add-missing-indices` to add optional database indices that improve query performance (e.g. after Nextcloud or app updates introduce new indices). Adding indices can take a while and temporarily impact performance, which is why it is not done automatically during updates. The run interval is defined in the environment variable `DB_MAINTENANCE_FREQUENCY`.
