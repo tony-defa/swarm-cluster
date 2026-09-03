@@ -1,0 +1,283 @@
+# =============================================================================
+# PatchMon - Docker Swarm Stack
+# =============================================================================
+# PatchMon is an open-source, enterprise-grade Linux patch management and
+# infrastructure monitoring platform with optional FreeBSD and Windows agent
+# support. This stack deploys the PatchMon server, its PostgreSQL database,
+# Redis (job queue / cache) and the guacd sidecar used for in-browser RDP.
+#
+# Agents connect outbound-only to the PatchMon server on port 443 (HTTPS +
+# WebSocket). No inbound firewall rules are required on managed hosts.
+#
+# Official documentation: https://patchmon.net/docs
+# Image source:           ghcr.io/patchmon/patchmon-server
+# License:                AGPL v3
+# =============================================================================
+
+x-default-opts: &default-opts
+  env_file:
+    - .env
+  logging:
+    options:
+      max-size: "10m"
+      max-file: "3"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://172.17.0.1:12201"
+
+services:
+  # ---------------------------------------------------------------------------
+  # PatchMon server (Go binary with embedded React frontend)
+  # ---------------------------------------------------------------------------
+  server:
+    <<: *default-opts
+    image: ghcr.io/patchmon/patchmon-server:${PATCHMON_TAG}
+    # Stable identity for the agent presence registry. Without this the
+    # server identifies itself by the container hostname, which Docker
+    # derives from the container ID, so upgrading with `up -d` recreates
+    # the container and the new process cannot recognise the presence
+    # records the old one left behind. The stack below ships its own
+    # Redis, so separate installs cannot collide.
+    hostname: patchmon-server
+    env_file:
+      - .env
+    secrets:
+      - patchmon_postgres_password
+      - patchmon_redis_password
+      - patchmon_jwt_secret
+      - patchmon_session_secret
+      - patchmon_ai_encryption_key
+    environment:
+      # The official entrypoint reads POSTGRES_PASSWORD, REDIS_PASSWORD,
+      # JWT_SECRET, SESSION_SECRET and AI_ENCRYPTION_KEY from the
+      # environment. PatchMon also supports *_FILE variants which read
+      # from a mounted secret - we use those below for the password /
+      # secret values, then expose plain env vars assembled in .env.
+      POSTGRES_HOST: database
+      REDIS_HOST: redis
+      GUACD_ADDRESS: guacd:4822
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      TZ: ${TZ:-UTC}
+      # When deployed behind Traefik we trust the proxy IP. PatchMon
+      # then uses the X-Forwarded-For header for the real client IP.
+      TRUST_PROXY: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    networks:
+      - patchmon_network
+      - proxy_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 30s
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.patchmon.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.patchmon.rule: Host(`${DOMAIN?Variable not set}`)
+        traefik.http.routers.patchmon.service: patchmon
+        traefik.http.routers.patchmon.priority: "1"
+        traefik.http.services.patchmon.loadbalancer.server.port: 3000
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 17 - PatchMon data store
+  # ---------------------------------------------------------------------------
+  database:
+    <<: *default-opts
+    image: postgres:${POSTGRES_TAG}
+    hostname: patchmon-db
+    env_file:
+      - .env
+    secrets:
+      - patchmon_postgres_password
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD_FILE: /run/secrets/patchmon_postgres_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - patchmon_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+      placement:
+        constraints:
+          - node.role == manager
+
+  # ---------------------------------------------------------------------------
+  # Redis 7 - Asynq job queue and cache
+  # ---------------------------------------------------------------------------
+  redis:
+    <<: *default-opts
+    image: redis:${REDIS_TAG}
+    hostname: patchmon-redis
+    command: >
+      sh -c "redis-server
+             --requirepass \"$$(cat /run/secrets/patchmon_redis_password)\"
+             --appendonly yes"
+    secrets:
+      - patchmon_redis_password
+    volumes:
+      - redis_data:/data
+    networks:
+      - patchmon_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+      placement:
+        constraints:
+          - node.role == manager
+
+  # ---------------------------------------------------------------------------
+  # guacd - Apache Guacamole daemon (in-browser RDP for Windows hosts)
+  # ---------------------------------------------------------------------------
+  guacd:
+    <<: *default-opts
+    image: guacamole/guacd:${GUACD_TAG}
+    hostname: patchmon-guacd
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 512m
+    cpus: '1.0'
+    networks:
+      - patchmon_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL backup service
+  # Performs a periodic pg_dump of the PatchMon database and stores it in
+  # the configured backup volume. Old archives are removed according to
+  # the RETENTION_DAYS environment variable.
+  # ---------------------------------------------------------------------------
+  backup:
+    <<: *default-opts
+    image: postgres:${POSTGRES_TAG}
+    secrets:
+      - patchmon_postgres_password
+    environment:
+      PGHOST: database
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      BACKUP_FREQUENCY: ${BACKUP_FREQUENCY:-24h}
+      RETENTION_DAYS: ${RETENTION_DAYS:-14}
+    volumes:
+      - patchmon_backup:/backup
+    command:
+      - sh
+      - -c
+      - |
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] PatchMon backup service started."
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Waiting 5 minutes for the database to become available..."
+        sleep 5m
+        while true; do
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating pg_dump of PatchMon database '$${POSTGRES_DB}'..."
+          PGPASSWORD="$$(cat /run/secrets/patchmon_postgres_password)" \
+            pg_dump -h database -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}" \
+              --format=custom --no-owner --no-privileges \
+              -f /backup/patchmon_db_$$(date +'%Y%m%d_%H%M%S').dump
+          code=$$?
+          if [ $$code -eq 0 ]; then
+            echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup completed successfully. Next backup in $${BACKUP_FREQUENCY}."
+          else
+            echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Backup failed (exit $$code). Next attempt in $${BACKUP_FREQUENCY}."
+          fi
+          # Remove backups older than RETENTION_DAYS
+          find /backup -type f -name "patchmon_db_*.dump" -mtime +$${RETENTION_DAYS} -delete
+          sleep $${BACKUP_FREQUENCY}
+        done
+    networks:
+      - patchmon_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+      placement:
+        constraints:
+          - node.role == manager
+
+# =============================================================================
+# Secrets
+# =============================================================================
+# All sensitive values are stored in Docker secrets (managed by the
+# `docker secret create` command). The deploy-stack.sh helper will
+# interactively prompt for each secret if it does not already exist.
+secrets:
+  patchmon_postgres_password:
+    external: true
+  patchmon_redis_password:
+    external: true
+  patchmon_jwt_secret:
+    external: true
+  patchmon_session_secret:
+    external: true
+  patchmon_ai_encryption_key:
+    external: true
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  patchmon_network:
+    driver: overlay
+    attachable: true
+
+  proxy_network:
+    external: true
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_PATCHMON_DB_PATH}
+      type: none
+      o: bind
+      # device: ":${HOST_PATCHMON_DB_PATH?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  redis_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_PATCHMON_REDIS_PATH}
+      type: none
+      o: bind
+      # device: ":${HOST_PATCHMON_REDIS_PATH?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  patchmon_backup:
+    driver: local
+    driver_opts:
+      device: ${HOST_PATCHMON_BACKUP_PATH}
+      type: none
+      o: bind
+      # device: ":${HOST_PATCHMON_BACKUP_PATH?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
