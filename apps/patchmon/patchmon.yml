@@ -1,0 +1,207 @@
+x-default-opts: &default-opts
+  env_file:
+    - .env
+  logging:
+    options:
+      max-size: "10m"
+      max-file: "3"
+    # driver: "gelf"
+    # options:
+    #   gelf-address: "udp://172.17.0.1:12201"
+
+services:
+  server:
+    <<: *default-opts
+    image: ghcr.io/patchmon/patchmon-server:${PATCHMON_TAG}
+    # Stable hostname: the agent presence registry tracks the server by
+    # hostname, so changing it on container recreate breaks it.
+    hostname: patchmon-server
+    secrets:
+      - patchmon_postgres_password
+      - patchmon_redis_password
+      - patchmon_jwt_secret
+      - patchmon_session_secret
+      - patchmon_ai_encryption_key
+    environment:
+      POSTGRES_HOST: database
+      REDIS_HOST: redis
+      GUACD_ADDRESS: guacd:4822
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      TZ: ${TZ:-UTC}
+      TRUST_PROXY: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    networks:
+      - patchmon_network
+      - proxy_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 30s
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.patchmon.entrypoints: ${ENTRYPOINT:-websecure}
+        traefik.http.routers.patchmon.rule: Host(`${DOMAIN?Variable not set}`)
+        traefik.http.routers.patchmon.service: patchmon
+        traefik.http.services.patchmon.loadbalancer.server.port: 3000
+
+  database:
+    <<: *default-opts
+    image: postgres:${POSTGRES_TAG}
+    secrets:
+      - patchmon_postgres_password
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD_FILE: /run/secrets/patchmon_postgres_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - patchmon_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+      placement:
+        constraints:
+          - node.role == manager
+
+  redis:
+    <<: *default-opts
+    image: redis:${REDIS_TAG}
+    command: redis-server --requirepass "$(cat /run/secrets/patchmon_redis_password)" --appendonly yes
+    secrets:
+      - patchmon_redis_password
+    volumes:
+      - redis_data:/data
+    networks:
+      - patchmon_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+      placement:
+        constraints:
+          - node.role == manager
+
+  guacd:
+    <<: *default-opts
+    image: guacamole/guacd:${GUACD_TAG}
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 512m
+    cpus: '1.0'
+    networks:
+      - patchmon_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+
+  backup:
+    <<: *default-opts
+    image: postgres:${POSTGRES_TAG}
+    secrets:
+      - patchmon_postgres_password
+    environment:
+      PGHOST: database
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      BACKUP_FREQUENCY: ${BACKUP_FREQUENCY:-24h}
+      RETENTION_DAYS: ${RETENTION_DAYS:-14}
+    volumes:
+      - patchmon_backup:/backup
+    command:
+      - sh
+      - -c
+      - |
+        echo "[$$(date +'%Y-%m-%d %H:%M:%S')] PatchMon backup service started. Waiting 5 minutes for the database...";
+        sleep 5m;
+        while true; do
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Creating pg_dump of '$${POSTGRES_DB}'...";
+          PGPASSWORD="$$(cat /run/secrets/patchmon_postgres_password)" \
+            pg_dump -h database -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}" \
+              --format=custom --no-owner --no-privileges \
+              -f /backup/patchmon_db_$$(date +'%Y%m%d_%H%M%S').dump;
+          find /backup -type f -name "patchmon_db_*.dump" -mtime +$${RETENTION_DAYS} -delete;
+          echo "[$$(date +'%Y-%m-%d %H:%M:%S')] Done. Next backup in $${BACKUP_FREQUENCY}.";
+          sleep $${BACKUP_FREQUENCY};
+        done
+    networks:
+      - patchmon_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 600s
+      placement:
+        constraints:
+          - node.role == manager
+
+secrets:
+  patchmon_postgres_password:
+    external: true
+  patchmon_redis_password:
+    external: true
+  patchmon_jwt_secret:
+    external: true
+  patchmon_session_secret:
+    external: true
+  patchmon_ai_encryption_key:
+    external: true
+
+networks:
+  patchmon_network:
+    driver: overlay
+    attachable: true
+  proxy_network:
+    external: true
+
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_PATCHMON_DB_PATH}
+      type: none
+      o: bind
+      # device: ":${HOST_PATCHMON_DB_PATH?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  redis_data:
+    driver: local
+    driver_opts:
+      device: ${HOST_PATCHMON_REDIS_PATH}
+      type: none
+      o: bind
+      # device: ":${HOST_PATCHMON_REDIS_PATH?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
+
+  patchmon_backup:
+    driver: local
+    driver_opts:
+      device: ${HOST_PATCHMON_BACKUP_PATH}
+      type: none
+      o: bind
+      # device: ":${HOST_PATCHMON_BACKUP_PATH?Variable not set}"
+      # type: nfs
+      # o: addr=${NFS_SHARE_IP?Variable not set},rw,sync,nfsvers=4.1
