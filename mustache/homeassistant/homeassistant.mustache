@@ -210,8 +210,7 @@ services:
       - matter_data:/data
       - /run/dbus:/run/dbus:ro
     environment:
-      - MATTER_STORAGE_PATH=/data
-      - MATTER_CREDENTIALS_PATH=/data/credentials
+      - STORAGE_PATH=/data
       - MATTER_BLUETOOTH_ADAPTER=0
       - BLUETOOTH_PROXY_URL=unix:///run/dbus/system_bus_socket
     deploy:
