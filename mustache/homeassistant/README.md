@@ -100,13 +100,20 @@ This stack includes an optional Mosquitto MQTT broker. Mosquitto is a lightweigh
 
 ### Matter Server
 
-This stack includes an optional Matter Server using the `ghcr.io/home-assistant-libs/python-matter-server:stable` image.
+This stack includes an optional Matter Server using the `ghcr.io/matter-js/matterjs-server:stable` image (Matter.js Server 9.0+).
 
 #### Network Requirements for Matter Service
 The Matter Server requires host networking mode for proper operation:
 - **mDNS**: Required for device discovery
 - **Thread Protocol**: Requires direct network access
-- **Bluetooth**: Needs D-Bus access for commissioning
+- **Bluetooth**: Needs D-Bus access for commissioning via Bluetooth proxy
+
+#### Bluetooth Configuration
+The Matter Server uses a Bluetooth proxy for Bluetooth communication. The proxy is configured via environment variables:
+- `MATTER_BLUETOOTH_ADAPTER`: Bluetooth adapter index (default: 0)
+- `BLUETOOTH_PROXY_URL`: D-Bus system bus socket for Bluetooth proxy (default: unix:///run/dbus/system_bus_socket)
+
+The stack mounts `/run/dbus:/run/dbus:ro` to provide access to the host's D-Bus system bus for Bluetooth proxy communication.
 
 ### Network Configuration for `macvlan_swarm`
 
