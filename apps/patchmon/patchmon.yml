@@ -112,8 +112,6 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    mem_limit: 512m
-    cpus: '1.0'
     networks:
       - patchmon_network
     deploy:
@@ -122,6 +120,11 @@ services:
       restart_policy:
         condition: on-failure
         delay: 10s
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          cpus: '1.0'
 
   backup:
     <<: *default-opts
