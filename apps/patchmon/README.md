@@ -47,10 +47,10 @@ Once the stack is running, open the UI at `${DOMAIN}` and create the first user 
 The `backup` service performs a `pg_dump` of the PatchMon database into `${HOST_PATCHMON_BACKUP_PATH}`. Frequency and retention are controlled with `BACKUP_FREQUENCY` and `RETENTION_DAYS`. PatchMon stores all of its state in PostgreSQL (including custom logos), so a `pg_dump` is sufficient for a full restore.
 
 ### Restore
-Deploy the stack with an empty `postgres_data` volume to start fresh, then load the dump:
+Deploy the stack with an empty `postgres_data` volume to start fresh, then load the dump. The secret value must be retrieved from Docker secrets:
 
 ```sh
-PGPASSWORD="<value of patchmon_postgres_password>" \
+PGPASSWORD="$(docker secret inspect patchmon_postgres_password --format '{{.Spec.Data}}' | base64 -d)" \
   pg_restore -h database -U patchmon_user -d patchmon_db \
     --clean --if-exists --no-owner --no-privileges \
     /backup/patchmon_db_<timestamp>.dump
