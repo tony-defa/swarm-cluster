@@ -33,7 +33,7 @@ openssl rand -hex 64 | docker secret create patchmon_session_secret -
 openssl rand -hex 64 | docker secret create patchmon_ai_encryption_key -
 ```
 
-Set `JWT_SECRET` in your `.env` file (generate with `openssl rand -hex 32`).
+Set `JWT_SECRET` and `POSTGRES_PASSWORD` in your `.env` file (generate with `openssl rand -hex 32`). The `POSTGRES_PASSWORD` must match the value stored in the `patchmon_postgres_password` Docker secret.
 
 Each secret must exist before deploying the stack.
 
