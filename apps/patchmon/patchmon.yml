@@ -30,6 +30,11 @@ services:
       TZ: ${TZ:-UTC}
       TRUST_PROXY: "true"
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      POSTGRES_PASSWORD_FILE: /run/secrets/patchmon_postgres_password
+      REDIS_PASSWORD_FILE: /run/secrets/patchmon_redis_password
+      JWT_SECRET_FILE: /run/secrets/patchmon_jwt_secret
+      SESSION_SECRET_FILE: /run/secrets/patchmon_session_secret
+      AI_ENCRYPTION_KEY_FILE: /run/secrets/patchmon_ai_encryption_key
     networks:
       - patchmon_network
       - proxy_network
