@@ -21,15 +21,20 @@ Mandatory stacks are:
 
 ### Create pre-configured data folder
 No pre-configured data folder available.
-
 ### Create docker secrets
-Create the following docker secrets to configure startup credentials. Each value must match the corresponding variable in the `.env` file.
 
-- `patchmon_postgres_password`: PostgreSQL password (32-byte random hex)
-- `patchmon_redis_password`: Redis password (32-byte random hex)
-- `patchmon_jwt_secret`: JWT signing secret (64-byte random hex)
-- `patchmon_session_secret`: session encryption secret (64-byte random hex)
-- `patchmon_ai_encryption_key`: AI/settings encryption key (64-byte random hex)
+Create the following docker secrets to configure startup credentials. The stack reads secrets from `/run/secrets/` via `*_FILE` environment variables and secret mounts.
+
+```sh
+# Generate and create secrets (run on a Swarm manager node)
+openssl rand -hex 32 | docker secret create patchmon_postgres_password -
+openssl rand -hex 32 | docker secret create patchmon_redis_password -
+openssl rand -hex 64 | docker secret create patchmon_jwt_secret -
+openssl rand -hex 64 | docker secret create patchmon_session_secret -
+openssl rand -hex 64 | docker secret create patchmon_ai_encryption_key -
+```
+
+Each secret must exist before deploying the stack. The `.env` file no longer contains secret values—only the secret names are referenced.
 
 ### Create network
 No network needs to be created. The `patchmon_network` overlay is created automatically on deploy.
