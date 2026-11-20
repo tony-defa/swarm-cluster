@@ -82,7 +82,10 @@ services:
   redis:
     <<: *default-opts
     image: redis:${REDIS_TAG}
-    command: redis-server --requirepass "$(cat /run/secrets/patchmon_redis_password)" --appendonly yes
+    command:
+      - sh
+      - -c
+      - redis-server --requirepass "$(cat /run/secrets/patchmon_redis_password)" --appendonly yes
     secrets:
       - patchmon_redis_password
     volumes:
