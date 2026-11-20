@@ -211,8 +211,10 @@ services:
       - /run/dbus:/run/dbus:ro
     environment:
       - STORAGE_PATH=/data
-      - MATTER_BLUETOOTH_ADAPTER=0
-      - BLUETOOTH_PROXY_URL=unix:///run/dbus/system_bus_socket
+      - BLUETOOTH_ADAPTER=0
+      - NOBLE_BINDINGS=dbus
+      - BLE_PROXY=true
+    command: --storage-path /data --paa-root-cert-dir /data/credentials
     deploy:
       mode: replicated
       replicas: 1
