@@ -192,7 +192,7 @@ services:
   {{#use_matter}}
   matter-server:
     <<: *default-opts
-    image: ghcr.io/home-assistant-libs/python-matter-server:{{matter_tag}}
+    image: ghcr.io/matter-js/matterjs-server:{{matter_tag}}
     networks:
       - macvlan_swarm
     {{#matter_publish_ports}}
@@ -209,7 +209,11 @@ services:
     volumes:
       - matter_data:/data
       - /run/dbus:/run/dbus:ro
-    command: --storage-path /data --paa-root-cert-dir /data/credentials --bluetooth-adapter 0
+    environment:
+      - STORAGE_PATH=/data
+      - BLUETOOTH_ADAPTER=0
+      - NOBLE_BINDINGS=dbus
+      - BLE_PROXY=true
     deploy:
       mode: replicated
       replicas: 1
