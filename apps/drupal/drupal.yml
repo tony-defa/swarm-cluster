@@ -11,7 +11,7 @@ x-default-opts: &default-opts
 services:
   web:
     <<: *default-opts
-    image: drupal:${DRUPAL_TAG}
+    image: drupal/cms:${DRUPAL_TAG}
     networks:
       - proxy_network
       - drupal_network
