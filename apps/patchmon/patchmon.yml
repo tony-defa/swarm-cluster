@@ -35,6 +35,7 @@ services:
       JWT_SECRET_FILE: /run/secrets/patchmon_jwt_secret
       SESSION_SECRET_FILE: /run/secrets/patchmon_session_secret
       AI_ENCRYPTION_KEY_FILE: /run/secrets/patchmon_ai_encryption_key
+      DATABASE_URL: postgresql://${POSTGRES_USER}@${POSTGRES_HOST}:5432/${POSTGRES_DB}
     networks:
       - patchmon_network
       - proxy_network
@@ -108,8 +109,6 @@ services:
     read_only: true
     tmpfs:
       - /tmp:size=64m
-    security_opt:
-      - no-new-privileges:true
     cap_drop:
       - ALL
     networks:
