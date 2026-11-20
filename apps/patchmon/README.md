@@ -29,12 +29,13 @@ Create the following docker secrets to configure startup credentials. The stack 
 # Generate and create secrets (run on a Swarm manager node)
 openssl rand -hex 32 | docker secret create patchmon_postgres_password -
 openssl rand -hex 32 | docker secret create patchmon_redis_password -
-openssl rand -hex 64 | docker secret create patchmon_jwt_secret -
 openssl rand -hex 64 | docker secret create patchmon_session_secret -
 openssl rand -hex 64 | docker secret create patchmon_ai_encryption_key -
 ```
 
-Each secret must exist before deploying the stack. The `.env` file no longer contains secret values—only the secret names are referenced.
+Set `JWT_SECRET` in your `.env` file (generate with `openssl rand -hex 32`).
+
+Each secret must exist before deploying the stack.
 
 ### Create network
 No network needs to be created. The `patchmon_network` overlay is created automatically on deploy.

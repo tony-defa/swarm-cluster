@@ -19,19 +19,8 @@ services:
     secrets:
       - patchmon_postgres_password
       - patchmon_redis_password
-      - patchmon_jwt_secret
       - patchmon_session_secret
       - patchmon_ai_encryption_key
-    command:
-      - sh
-      - -c
-      - |
-        export JWT_SECRET="$(cat /run/secrets/patchmon_jwt_secret)"
-        export SESSION_SECRET="$(cat /run/secrets/patchmon_session_secret)"
-        export AI_ENCRYPTION_KEY="$(cat /run/secrets/patchmon_ai_encryption_key)"
-        export PGPASSWORD="$(cat /run/secrets/patchmon_postgres_password)"
-        export DATABASE_URL="postgresql://${POSTGRES_USER}:${PGPASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}"
-        exec node dist/main.js
     environment:
       POSTGRES_HOST: database
       REDIS_HOST: redis
@@ -40,7 +29,12 @@ services:
       TZ: ${TZ:-UTC}
       TRUST_PROXY: "true"
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      POSTGRES_PASSWORD_FILE: /run/secrets/patchmon_postgres_password
       REDIS_PASSWORD_FILE: /run/secrets/patchmon_redis_password
+      SESSION_SECRET_FILE: /run/secrets/patchmon_session_secret
+      AI_ENCRYPTION_KEY_FILE: /run/secrets/patchmon_ai_encryption_key
+      JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgresql://${POSTGRES_USER}@${POSTGRES_HOST}:5432/${POSTGRES_DB}
     networks:
       - patchmon_network
       - proxy_network
